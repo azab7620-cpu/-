@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الأدمن - نُورُ تَعْلِيمِ الأَزْهَرِ</title>
+
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: https: blob:;
+      frame-src https://www.youtube.com https://drive.google.com https://*.google.com;
+      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com;
+      media-src 'self' blob: mediastream:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    ">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background: #f8f6f2; color: #333; overflow-x: hidden; transition: background 0.3s, color 0.3s; font-size: 14px; }
+        .thuluth-text { font-family: 'Aref Ruqaa', serif; font-weight: 700; letter-spacing: 0.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.15); }
+
+        body.dark-mode {
+            --bg-primary: #1a1a2e; --bg-card: #1e2a4a; --bg-header: #0f0f23;
+            --text-primary: #e0e0e0; --text-secondary: #b0b0b0; --border-color: #2a3a5a;
+            --gold: #d4af37; --input-bg: #2a3a5a; --input-border: #3a4a6a;
+        }
+        body.dark-mode { background: var(--bg-primary); color: var(--text-primary); }
+        body.dark-mode header { background: var(--bg-header); border-bottom-color: var(--gold); }
+        body.dark-mode .logo-text h1 { color: var(--gold); text-shadow: none; }
+        body.dark-mode .logo-text span { color: var(--text-secondary); }
+        body.dark-mode .btn-home, body.dark-mode .btn-logout { background: var(--gold); color: #1a1a2e; }
+        body.dark-mode .admin-tabs button { background: var(--bg-card); border-color: var(--border-color); color: var(--text-secondary); }
+        body.dark-mode .admin-tabs button.active { background: var(--gold); color: #1a1a2e; border-color: var(--gold); }
+        body.dark-mode .tab-content { background: var(--bg-card); }
+        body.dark-mode .admin-table th { background: var(--gold); color: #1a1a2e; }
+        body.dark-mode .admin-table td { border-bottom-color: var(--border-color); color: var(--text-primary); }
+        body.dark-mode .btn-card, body.dark-mode .btn-submit { background: var(--gold); color: #1a1a2e; }
+        body.dark-mode .add-form label { color: var(--text-secondary); }
+        body.dark-mode .add-form input, body.dark-mode .add-form select { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); }
+        body.dark-mode .question-box-generator { background: var(--bg-card); border-color: var(--border-color); }
+        body.dark-mode h2, body.dark-mode h4, body.dark-mode h5 { color: var(--gold); }
+        body.dark-mode .modal-content { background: var(--bg-card); color: var(--text-primary); }
+        body.dark-mode .detail-row { border-bottom-color: var(--border-color); }
+        body.dark-mode #myStreamsZone { background: linear-gradient(135deg, #0f1e2e 0%, #142738 100%) !important; }
+
+        .btn-dark-mode { background: transparent; border: 2px solid #3b0a0a; color: #3b0a0a; padding: 6px 12px; border-radius: 50%; font-size: 16px; cursor: pointer; transition: 0.3s; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .btn-dark-mode:hover { transform: scale(1.1) rotate(10deg); background: #f4edd3; }
+        body.dark-mode .btn-dark-mode { border-color: #d4af37; color: #d4af37; }
+
+        header { background: #fff; border-bottom: 3px solid #d4af37; padding: 10px 20px; border-radius: 0 0 24px 24px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .logo-text h1 { font-size: 22px; color: #3b0a0a; font-weight: 900; margin-bottom: 2px; }
+        .logo-text span { font-size: 10px; color: #888; }
+        .nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .btn-logout, .btn-home { border: none; padding: 8px 20px; border-radius: 50px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 13px; }
+        .btn-logout { background: #3b0a0a; color: #d4af37; }
+        .btn-home { background: #d4af37; color: #3b0a0a; }
+        .btn-logout:hover, .btn-home:hover { transform: translateY(-2px); }
+
+        .dashboard-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .dashboard-container h2 { font-size: 20px; }
+
+        .admin-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+        .admin-tabs button {
+            background: linear-gradient(135deg, #fff 0%, #fcfaf8 100%);
+            border: 2px solid #eadacc;
+            color: #3b0a0a;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 13px;
+            box-shadow: 0 3px 10px rgba(59,10,10,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .admin-tabs button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
+            transition: 0.5s;
+        }
+        .admin-tabs button:hover::before { left: 100%; }
+        .admin-tabs button:hover {
+            transform: translateY(-3px) scale(1.02);
+            border-color: #d4af37;
+            box-shadow: 0 8px 20px rgba(212,175,55,0.25);
+        }
+        .admin-tabs button.active {
+            background: linear-gradient(135deg, #3b0a0a 0%, #520e0e 100%);
+            color: #d4af37;
+            border-color: #d4af37;
+            box-shadow: 0 8px 22px rgba(59,10,10,0.35);
+            transform: translateY(-2px);
+        }
+        body.dark-mode .admin-tabs button {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        body.dark-mode .admin-tabs button.active {
+            background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%);
+            color: #1a1a2e;
+            border-color: #d4af37;
+        }
+
+        .tab-content { display: none; background: #fff; padding: 24px; border-radius: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); }
+        .tab-content.active { display: block; animation: fadeInUp 0.5s ease; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .admin-table th { background: #3b0a0a; color: #d4af37; padding: 12px; text-align: center; font-size: 13px; }
+        .admin-table th:first-child { border-radius: 0 16px 0 0; }
+        .admin-table th:last-child { border-radius: 16px 0 0 0; }
+        .admin-table td { padding: 12px; text-align: center; border-bottom: 1px solid #f0ede8; font-size: 13px; }
+        .admin-table tr:hover td { background: #f9f6f0; }
+
+        .btn-card {
+            background: linear-gradient(135deg, #3b0a0a 0%, #520e0e 100%);
+            color: #d4af37;
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 3px 10px rgba(59,10,10,0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: center;
+        }
+        .btn-card:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 15px rgba(59,10,10,0.3);
+        }
+        .btn-card:active { transform: translateY(0) scale(0.98); }
+
+        .btn-danger { background: linear-gradient(135deg, #c00 0%, #a00 100%); color: #fff; box-shadow: 0 3px 10px rgba(170,0,0,0.25); }
+        .btn-danger:hover { box-shadow: 0 6px 15px rgba(170,0,0,0.4); }
+        .btn-success { background: linear-gradient(135deg, #2a7a2a 0%, #1f5c1f 100%); color: #fff; box-shadow: 0 3px 10px rgba(42,122,42,0.25); }
+        .btn-success:hover { box-shadow: 0 6px 15px rgba(42,122,42,0.4); }
+        .btn-delete { background: linear-gradient(135deg, #8b0000 0%, #6b0000 100%); color: #fff; box-shadow: 0 3px 10px rgba(139,0,0,0.25); }
+        .btn-delete:hover { box-shadow: 0 6px 15px rgba(139,0,0,0.4); }
+        .btn-details { background: linear-gradient(135deg, #1e5a8a 0%, #144266 100%); color: #fff; box-shadow: 0 3px 10px rgba(30,90,138,0.25); }
+        .btn-details:hover { box-shadow: 0 6px 15px rgba(30,90,138,0.4); }
+        .btn-cam-off { background: linear-gradient(135deg, #ccc 0%, #aaa 100%); color: #555; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .btn-mic-off { background: linear-gradient(135deg, #ccc 0%, #aaa 100%); color: #555; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+
+        .add-form { margin-top: 15px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .full-width { grid-column: 1 / -1; }
+        .add-form label { display: block; font-weight: 700; font-size: 13px; color: #3b0a0a; margin-bottom: 5px; }
+        .add-form input, .add-form select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #eadacc;
+            border-radius: 14px;
+            font-size: 13px;
+            font-family: 'Cairo', sans-serif;
+            outline: none;
+            transition: 0.3s;
+            background: #fff;
+        }
+        .add-form input:focus, .add-form select:focus {
+            border-color: #d4af37;
+            box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
+        }
+
+        .upload-progress {
+            display: none;
+            margin-top: 10px;
+            padding: 12px 16px;
+            background: #fffdf5;
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+        }
+        .upload-progress.active { display: block; }
+        .upload-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0ede8;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .upload-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c9a961, #8a6f1d);
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+        .upload-progress-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: #3b0a0a;
+            text-align: center;
+        }
+        body.dark-mode .upload-progress { background: var(--bg-card); color: var(--text-primary); }
+        body.dark-mode .upload-progress-text { color: var(--gold); }
+
+        .image-preview-box {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            background: #fffdf5;
+            border: 2px dashed #d4af37;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .image-preview-box.active { display: block; }
+        .image-preview-box img {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #d4af37;
+            padding: 2px;
+        }
+        .image-preview-box p {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+        body.dark-mode .image-preview-box { background: var(--bg-card); }
+        body.dark-mode .image-preview-box p { color: var(--text-secondary); }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #3b0a0a 0%, #520e0e 100%);
+            color: #d4af37;
+            padding: 12px 32px;
+            border: 2px solid transparent;
+            border-radius: 50px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(59,10,10,0.2);
+            letter-spacing: 0.3px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(59,10,10,0.35);
+        }
+        .btn-submit:active { transform: translateY(-1px); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .bundle-container-box { border: 2px dashed #ddd; padding: 18px; border-radius: 20px; margin-bottom: 15px; transition: 0.3s; }
+        .bundle-container-box:hover { border-color: #d4af37; }
+        .question-box-generator { background: #fcfaf8; border: 1px solid #ddd; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
+
+        .alert { padding: 12px 18px; border-radius: 16px; margin-bottom: 15px; font-weight: 600; font-size: 13px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        .exam-one-time-box { display: flex; align-items: center; gap: 12px; background: #fff9e6; padding: 14px 18px; border-radius: 16px; border: 2px dashed #d4af37; cursor: pointer; transition: 0.3s; }
+        .exam-one-time-box:hover { background: #fff3cc; }
+        .exam-one-time-box input { width: 22px !important; height: 22px !important; margin: 0 !important; accent-color: #d4af37; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #fff; border-radius: 28px; padding: 28px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; border: 2px solid #d4af37; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4edd3; padding-bottom: 15px; }
+        .modal-close { background: linear-gradient(135deg, #c00 0%, #a00 100%); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; font-weight: 900; transition: 0.3s; }
+        .modal-close:hover { transform: rotate(90deg) scale(1.1); }
+
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px dashed #f0ede8; font-size: 13px; }
+
+        #loadingOverlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f6f2; z-index: 99999; justify-content: center; align-items: center; flex-direction: column; gap: 20px; }
+        #loadingOverlay .spinner { width: 60px; height: 60px; border: 5px solid #f4edd3; border-top-color: #d4af37; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.6; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .live-badge {
+            background: linear-gradient(135deg, #c00 0%, #800 100%);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 4px 12px rgba(170,0,0,0.4);
+        }
+        .live-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; display: inline-block; }
+
+        .live-control-panel {
+            background: linear-gradient(135deg, #fcfaf8 0%, #f4edd3 100%);
+            border: 2px solid #d4af37;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 25px rgba(212,175,55,0.15);
+        }
+        body.dark-mode .live-control-panel { background: linear-gradient(135deg, #0f0f23 0%, #1e2a4a 100%); }
+        .live-control-panel h5 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #3b0a0a;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px dashed #d4af37;
+        }
+        body.dark-mode .live-control-panel h5 { color: var(--gold); }
+
+        .live-toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 15px 0; }
+        .live-toolbar button {
+            padding: 12px 22px;
+            border-radius: 50px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .live-toolbar button:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .live-toolbar button.neutral { background: linear-gradient(135deg, #3b0a0a 0%, #520e0e 100%); color: #d4af37; }
+        .live-toolbar button.active { background: linear-gradient(135deg, #2a7a2a 0%, #1f5c1f 100%); color: #fff; }
+        .live-toolbar button.inactive { background: linear-gradient(135deg, #c00 0%, #800 100%); color: #fff; }
+
+        .live-permission-box {
+            background: #fff;
+            border: 2px dashed #d4af37;
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        body.dark-mode .live-permission-box { background: var(--bg-header); }
+
+        .perm-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: linear-gradient(90deg, #fffdf5 0%, #fcfaf8 100%);
+            border-radius: 14px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        body.dark-mode .perm-toggle { background: var(--bg-card); }
+        .perm-toggle:hover { border-color: #d4af37; transform: translateX(-4px); }
+        .perm-toggle span { font-weight: 700; font-size: 13px; }
+        .perm-toggle input[type="checkbox"] {
+            width: 52px; height: 28px;
+            appearance: none; background: #ccc;
+            border-radius: 50px; position: relative;
+            cursor: pointer; transition: 0.3s;
+            flex-shrink: 0;
+        }
+        .perm-toggle input[type="checkbox"]::before {
+            content: ''; position: absolute;
+            width: 22px; height: 22px;
+            background: #fff; border-radius: 50%;
+            top: 3px; right: 3px;
+            transition: 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .perm-toggle input[type="checkbox"]:checked { background: #2a7a2a; }
+        .perm-toggle input[type="checkbox"]:checked::before { right: calc(100% - 25px); }
+
+        #localPreview {
+            width: 100%; max-width: 500px;
+            border-radius: 20px; border: 3px solid #d4af37;
+            background: #000; display: block;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .student-streams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px; margin-top: 15px;
+        }
+        .student-stream-card {
+            background: #000; border-radius: 16px;
+            overflow: hidden; border: 2px solid #d4af37;
+            position: relative;
+            aspect-ratio: 16/9;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+        .student-stream-card:hover { transform: translateY(-4px); border-color: #ffd966; }
+        .student-stream-card video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        .student-stream-card .student-name {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.9), transparent);
+            color: #fff;
+            padding: 18px 10px 6px; font-size: 11px;
+            font-weight: 700; text-align: center;
+        }
+
+        .stream-status {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 50px;
+            font-size: 12px; font-weight: 700;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        .stream-status.on { background: linear-gradient(135deg, #2a7a2a, #4caf50); color: #fff; }
+        .stream-status.off { background: #f8d7da; color: #721c24; }
+
+        #startLiveBtn {
+            background: linear-gradient(135deg, #d4af37 0%, #b8962e 100%) !important;
+            color: #3b0a0a !important;
+            font-size: 15px !important;
+            font-weight: 900 !important;
+            padding: 14px 40px !important;
+            box-shadow: 0 8px 22px rgba(212,175,55,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+        #startLiveBtn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        #startLiveBtn:hover::after { width: 300px; height: 300px; }
+        #startLiveBtn:hover { transform: translateY(-4px) !important; box-shadow: 0 14px 30px rgba(212,175,55,0.6) !important; }
+
+        #stopLiveBtn {
+            background: linear-gradient(135deg, #c00 0%, #800 100%) !important;
+            color: #fff !important;
+            font-size: 15px !important;
+            font-weight: 900 !important;
+            padding: 14px 40px !important;
+            box-shadow: 0 8px 22px rgba(170,0,0,0.4) !important;
+        }
+        #stopLiveBtn:hover { transform: translateY(-4px) !important; box-shadow: 0 14px 30px rgba(170,0,0,0.6) !important; }
+
+        #studentSearchInput { background: linear-gradient(135deg, #fff 0%, #fcfaf8 100%); transition: 0.3s; }
+        #studentSearchInput:focus { box-shadow: 0 0 0 5px rgba(212,175,55,0.2); }
+
+        #myStreamsZone {
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%);
+            border: 2px dashed #1e5a8a;
+            border-radius: 18px;
+            box-shadow: 0 6px 18px rgba(30,90,138,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        #myStreamsBtn {
+            background: linear-gradient(135deg, #1e5a8a 0%, #144266 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 26px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(30,90,138,0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            font-family: 'Cairo', sans-serif;
+        }
+        #myStreamsBtn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(30,90,138,0.55);
+        }
+
+        @media (max-width: 600px) {
+            .admin-tabs { flex-direction: column; }
+            .form-grid { grid-template-columns: 1fr; }
+            .admin-table { font-size: 11px; }
+            .logo-text h1 { font-size: 18px; }
+            .student-streams-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            #myStreamsZone { flex-direction: column; align-items: flex-start; }
+            #myStreamsBtn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div style="font-weight:700; color:#3b0a0a;">جاري التحقق من الصلاحيات...</div>
+    </div>
+
+    <header>
+        <div class="nav-container">
+            <div class="logo-text"><h1 class="thuluth-text">نُورُ تَعْلِيمِ الأَزْهَرِ</h1><span>لوحة الأدمن</span></div>
+            <div class="nav-buttons">
+                <button onclick="toggleDarkMode()" class="btn-dark-mode" title="تبديل الوضع الداكن">🌙</button>
+                <span id="adminNameDisplay" style="font-weight:700; color:#3b0a0a; font-size:13px;"></span>
+                <button onclick="window.open('index.html', '_self')" class="btn-home">🏠 فتح الرئيسية</button>
+                <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <h2 style="color:#3b0a0a; margin-bottom:18px;">⚙️ لوحة تحكم الأدمن</h2>
+
+        <div class="admin-tabs">
+            <button class="active" onclick="showTab('students')">👥 الطلاب</button>
+            <button onclick="showTab('bundles')">📦 الحزم والوحدات</button>
+            <button onclick="showTab('courses')">📹 المحاضرات</button>
+            <button onclick="showTab('books')">📚 الكتب</button>
+            <button onclick="showTab('teachers')">👨‍🏫 المدرسون</button>
+            <button onclick="showTab('exams')">📝 الاختبارات</button>
+            <button onclick="showTab('liveStream')">🔴 البث المباشر</button>
+            <button onclick="showTab('addCourse')">➕ إضافة محاضرة</button>
+            <button onclick="showTab('addBook')">➕ إضافة كتاب</button>
+            <button onclick="showTab('addTeacher')">➕ إضافة مدرس</button>
+            <button onclick="showTab('addBundle')">➕ إنشاء وحدة</button>
+            <button onclick="showTab('addExam')">➕ إضافة اختبار</button>
+        </div>
+
+        <div id="tabStudents" class="tab-content active">
+            <div class="alert alert-success" style="margin-bottom:15px;">
+                ⚠️ <strong>مهم جداً:</strong> بعد إضافة المحاضرات والكتب والاختبارات، يجب أن تضغط زر <strong>"تفعيل"</strong> بجانب الطالب ليرى المحتوى الخاص بصفه.
+            </div>
+            <div style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <div style="flex:1; min-width:280px; position:relative;">
+                    <input type="text" id="studentSearchInput" placeholder="🔍 ابحث بالاسم أو رقم الطالب..." oninput="searchStudents()" style="width:100%; padding:13px 42px 13px 16px; border:2px solid #d4af37; border-radius:16px; font-size:14px; outline:none; background:#fff;">
+                    <span style="position:absolute; right:15px; top:50%; transform:translateY(-50%); font-size:18px; color:#d4af37;">🔍</span>
+                </div>
+                <button onclick="clearSearch()" class="btn-card" style="background:#555; color:#fff; padding:12px 20px;">✖ مسح البحث</button>
+                <span id="searchResultsCount" style="font-weight:700; color:#3b0a0a; font-size:13px;"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>الاسم</th><th>الصف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabBundles" class="tab-content">
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>اسم الوحدة</th><th>الصف</th><th>العناصر</th><th>إجراءات</th></tr></thead>
+                    <tbody id="bundlesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabCourses" class="tab-content">
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>العنوان</th><th>الصف</th><th>الرابط</th><th>إجراءات</th></tr></thead>
+                    <tbody id="coursesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabBooks" class="tab-content">
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>العنوان</th><th>الصف</th><th>الرابط</th><th>إجراءات</th></tr></thead>
+                    <tbody id="booksTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabTeachers" class="tab-content">
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>الاسم</th><th>الصورة</th><th>إجراءات</th></tr></thead>
+                    <tbody id="teachersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabExams" class="tab-content">
+            <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 قائمة الاختبارات</h4>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>العنوان</th><th>الصف</th><th>عدد الأسئلة</th><th>النوع</th><th>إجراءات</th></tr></thead>
+                    <tbody id="examsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 🔴 البث المباشر -->
+        <div id="tabLiveStream" class="tab-content">
+            <h4 style="color:#3b0a0a; margin-bottom:15px;">🔴 البث المباشر الداخلي</h4>
+
+            <div id="liveStreamStatusBox" style="margin-bottom:20px;">
+                <div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط</div>
+            </div>
+
+            <div id="myStreamsZone">
+                <div>
+                    <strong style="color:#144266; display:block; font-size:14px; margin-bottom:4px;">📋 بثوثي النشطة</strong>
+                    <span style="color:#666; font-size:12px;">اعرض كل البثوث اللي أنت مسجلها دلوقتي وأوقف أي واحد منهم.</span>
+                </div>
+                <button type="button" onclick="showMyStreamsModal()" id="myStreamsBtn">
+                    📋 بثوثي النشطة
+                    <span id="myStreamsCount" style="background:#fff; color:#144266; padding:2px 10px; border-radius:50px; font-size:11px; font-weight:900;">0</span>
+                </button>
+            </div>
+
+            <div class="live-control-panel">
+                <h5>🎛️ لوحة التحكم بالبث</h5>
+
+                <div class="live-toolbar" id="liveToolbar" style="display:none;">
+                    <button id="btnAdminCam" onclick="toggleAdminCamera()" class="neutral">
+                        <span>📷</span> <span>إيقاف الكاميرا</span>
+                    </button>
+                    <button id="btnAdminMic" onclick="toggleAdminMic()" class="neutral">
+                        <span>🎤</span> <span>إيقاف المايك</span>
+                    </button>
+                    <button id="btnSwitchCam" onclick="switchAdminCamera()" class="neutral" style="display:none;">
+                        <span>🔄</span> <span>Front 1</span>
+                    </button>
+                    <span class="stream-status on" id="viewerCountBadge">
+                        👥 <strong id="viewerCount">0</strong> مشاهد
+                    </span>
+                </div>
+
+                <div id="permissionPanel" style="display:none; margin-top:15px;">
+                    <h6 style="color:#3b0a0a; margin-bottom:12px; font-size:14px;">🔐 صلاحيات الطلاب أثناء البث</h6>
+                    <div class="live-permission-box">
+                        <label class="perm-toggle">
+                            <span>📷 السماح لكل الطلاب بفتح الكاميرا</span>
+                            <input type="checkbox" id="permAllCameras" onchange="saveGlobalPermissions()">
+                        </label>
+                        <label class="perm-toggle">
+                            <span>🎤 السماح لكل الطلاب بفتح المايكروفون</span>
+                            <input type="checkbox" id="permAllMics" onchange="saveGlobalPermissions()">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="localPreviewContainer" style="display:none; margin-bottom:20px;">
+                <label style="font-weight:800; color:#3b0a0a; display:block; margin-bottom:8px;">📹 معاينة كاميرتك:</label>
+                <video id="localPreview" autoplay muted playsinline></video>
+                <p style="margin-top:8px; font-size:12px; color:#666;">👁️ المربع الأسود الصغير = عرض تقريبي لما يراه الطلاب</p>
+            </div>
+
+            <div id="studentStreamsContainer" style="display:none; margin-bottom:20px;">
+                <h5 style="color:#3b0a0a; margin-bottom:10px;">👥 فيديوهات الطلاب المتصلين:</h5>
+                <div id="studentStreamsGrid" class="student-streams-grid"></div>
+            </div>
+
+            <form id="liveStreamForm">
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label>📝 عنوان البث</label>
+                        <input type="text" id="liveTitle" placeholder="مثال: مراجعة ليلة الامتحان - الفقه" required>
+                    </div>
+                    <div>
+                        <label>🎓 الصف المستهدف</label>
+                        <select id="liveGrade" required>
+                            <option value="">اختر الصف</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>📷 مصدر الفيديو الأساسي</label>
+                        <select id="liveSource">
+                            <option value="camera">📷 كاميرا + مايك</option>
+                            <option value="screen">🖥️ مشاركة الشاشة + صوت</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+                    <button type="submit" id="startLiveBtn" class="btn-submit">🔴 بدء البث</button>
+                    <button type="button" onclick="stopLiveStream()" id="stopLiveBtn" class="btn-submit" style="display:none;">⏹️ إيقاف البث</button>
+                </div>
+            </form>
+
+            <div id="liveStreamMsg" style="margin-top:15px;"></div>
+        </div>
+
+        <div id="tabAddCourse" class="tab-content">
+            <div class="add-form">
+                <h4 style="color:#3b0a0a; margin-bottom:15px;">📹 إضافة محاضرة جديدة</h4>
+                <div class="alert alert-info">
+                    💡 <strong>طريقة الرفع:</strong> ارفع الفيديو على <strong>Google Drive</strong> → كليك يمين → Share → Change to anyone with link → Copy link → الصقه هنا.
+                </div>
+                <form id="addCourseForm">
+                    <div class="form-grid">
+                        <div><label>عنوان المحاضرة</label><input type="text" id="courseTitle" required></div>
+                        <div><label>الصف الدراسي</label><select id="courseGrade" required><option value="">اختر الصف</option></select></div>
+                        <div class="full-width">
+                            <label>رابط المحاضرة (Google Drive أو YouTube)</label>
+                            <input type="url" id="courseLink" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing" required>
+                        </div>
+                        <div class="full-width" style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="courseShowInHome" style="width:20px; height:20px; margin:0;">
+                            <label for="courseShowInHome" style="font-weight:700; color:#3b0a0a; margin:0; font-size:13px;">🌐 ظهور في الصفحة الرئيسية (للجميع)</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة المحاضرة</button>
+                </form>
+                <div id="courseAddMsg" style="margin-top:15px;"></div>
+            </div>
+        </div>
+
+        <div id="tabAddBook" class="tab-content">
+            <div class="add-form">
+                <h4 style="color:#3b0a0a; margin-bottom:15px;">📚 إضافة كتاب أو ملزمة</h4>
+                <div class="alert alert-info">
+                    💡 <strong>طريقة الرفع:</strong> ارفع الـ PDF على <strong>Google Drive</strong> → كليك يمين → Share → Change to anyone with link → Copy link → الصقه هنا.
+                </div>
+                <form id="addBookForm">
+                    <div class="form-grid">
+                        <div><label>عنوان الكتاب</label><input type="text" id="bookTitle" required></div>
+                        <div><label>الصف الدراسي</label><select id="bookGrade" required><option value="">اختر الصف</option></select></div>
+                        <div class="full-width">
+                            <label>رابط التحميل (Google Drive)</label>
+                            <input type="url" id="bookLink" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing" required>
+                        </div>
+                        <div class="full-width" style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="bookShowInHome" style="width:20px; height:20px; margin:0;">
+                            <label for="bookShowInHome" style="font-weight:700; color:#3b0a0a; margin:0; font-size:13px;">🌐 ظهور في الصفحة الرئيسية (للجميع)</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة الكتاب</button>
+                </form>
+                <div id="bookAddMsg" style="margin-top:15px;"></div>
+            </div>
+        </div>
+
+        <div id="tabAddTeacher" class="tab-content">
+            <div class="add-form">
+                <h4 style="color:#3b0a0a; margin-bottom:15px;">👨‍🏫 إضافة مدرس جديد</h4>
+                <form id="addTeacherForm">
+                    <div class="form-grid">
+                        <div><label>اسم المدرس</label><input type="text" id="teacherName" required></div>
+                        <div><label>التخصص</label><input type="text" id="teacherSpecialty"></div>
+                        <div class="full-width">
+                            <label>رابط صورة المدرس (اختياري)</label>
+                            <input type="url" id="teacherImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="full-width">
+                            <label>أو ارفع صورة من جهازك (سيتم ضغطها تلقائياً)</label>
+                            <input type="file" id="teacherImageFile" accept="image/*" onchange="previewTeacherImage(this)">
+                            <div class="image-preview-box" id="teacherImagePreview">
+                                <img id="teacherPreviewImg" src="" alt="معاينة">
+                                <p>معاينة الصورة — سيتم ضغطها وحفظها تلقائياً</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة المدرس</button>
+                </form>
+                <div id="teacherAddMsg" style="margin-top:15px;"></div>
+            </div>
+        </div>
+
+        <div id="tabAddBundle" class="tab-content">
+            <div class="bundle-container-box">
+                <div class="add-form">
+                    <h5 style="color:#555; margin-bottom:10px; font-size:14px;">1. أنشئ الوحدة الجديدة:</h5>
+                    <form id="addBundleForm">
+                        <div class="form-grid">
+                            <div><label>اسم الوحدة</label><input type="text" id="bundleTitle" required></div>
+                            <div><label>الصف الدراسي</label><select id="bundleGrade" required><option value="">اختر الصف</option></select></div>
+                        </div>
+                        <button type="submit" class="btn-submit">إنشاء الوحدة</button>
+                    </form>
+                    <div id="bundleAddMsg" style="margin-top:15px;"></div>
+                </div>
+            </div>
+            <div class="bundle-container-box">
+                <div class="add-form">
+                    <h5 style="color:#555; margin-bottom:10px; font-size:14px;">2. أضف عناصر داخل الوحدة:</h5>
+                    <form id="addItemForm">
+                        <div class="form-grid">
+                            <div><label>اختر الوحدة</label><select id="itemBundleSelect" required></select></div>
+                            <div><label>نوع العنصر</label>
+                                <select id="itemType" onchange="toggleItemFields()">
+                                    <option value="pdf">ملف PDF</option>
+                                    <option value="video">فيديو</option>
+                                    <option value="exam">اختبار</option>
+                                </select>
+                            </div>
+                            <div id="sourceFields" class="full-width" style="display:none;">
+                                <label>مصدر العنصر</label>
+                                <select id="sourceType" onchange="toggleSourceFields()">
+                                    <option value="url">رابط خارجي (Google Drive / YouTube)</option>
+                                    <option value="platform">اختيار من محتويات المنصة</option>
+                                </select>
+                            </div>
+                            <div id="manualFields" class="full-width" style="display:none;">
+                                <div class="form-grid">
+                                    <div><label>عنوان العنصر</label><input type="text" id="itemTitle"></div>
+                                    <div><label>الرابط</label><input type="url" id="itemLink" placeholder="https://drive.google.com/..."></div>
+                                </div>
+                            </div>
+                            <div id="platformFields" class="full-width" style="display:none;">
+                                <label>اختر من المحاضرات أو الكتب الموجودة:</label>
+                                <select id="platformItemSelect"></select>
+                            </div>
+                        </div>
+                        <div id="examFields" class="full-width" style="display:none; margin-top:15px;">
+                            <div class="form-grid">
+                                <div><label>عنوان الاختبار</label><input type="text" id="examItemTitle"></div>
+                                <div><label>اختر الاختبار</label><select id="itemExamSelect"></select></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">إضافة العنصر للوحدة</button>
+                    </form>
+                    <div id="itemAddMsg" style="margin-top:15px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabAddExam" class="tab-content">
+            <div class="add-form">
+                <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 إضافة اختبار جديد</h4>
+                <div class="alert alert-success">💡 الاختبار لا يظهر في الصفحة الرئيسية، بل يظهر للطلاب "المفعلين" فقط.</div>
+                <div class="alert alert-warning">🔒 <strong>ملاحظة أمنية:</strong> الإجابات الصحيحة تُحفظ في مخزن محمي لا يستطيع الطلاب الوصول إليه.</div>
+                <form id="examSetupForm">
+                    <div class="form-grid">
+                        <div><label>عنوان الاختبار</label><input type="text" id="examTitle" required></div>
+                        <div><label>الصف الدراسي</label><select id="examGrade" required><option value="">اختر الصف</option></select></div>
+                        <div><label>عدد الأسئلة</label><input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5"></div>
+                        <div class="full-width">
+                            <label class="exam-one-time-box">
+                                <input type="checkbox" id="examOneTimeOnly">
+                                <span>🔒 اختبار لمرة واحدة فقط</span>
+                            </label>
+                        </div>
+                        <div class="full-width">
+                            <button type="button" onclick="generateQuestionBoxes()" class="btn-submit" style="background:#d4af37; color:#3b0a0a;">⬇️ توليد حقول الأسئلة</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="questionsContainer"></div>
+                <div id="examAddMsg" style="margin-top:15px;"></div>
+                <button type="button" onclick="saveFullExam()" id="saveExamBtn" style="display:none; width:100%; background:linear-gradient(135deg, #2a7a2a, #1f5c1f); color:#fff; padding:15px; border:none; border-radius:50px; font-weight:900; font-size:16px; margin-top:20px; cursor:pointer; box-shadow:0 8px 22px rgba(42,122,42,0.4);">💾 حفظ الاختبار بالكامل</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="studentDetailsModal" class="modal-overlay" onclick="closeStudentModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 style="color:#3b0a0a; font-size:18px;">👤 تفاصيل الطالب</h3>
+                <button class="modal-close" onclick="closeStudentModal()">✕</button>
+            </div>
+            <div id="studentDetailsContent"></div>
+        </div>
+    </div>
+
+    <div id="myStreamsModal" class="modal-overlay" onclick="closeMyStreamsModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 style="color:#3b0a0a; font-size:18px;">📋 بثوثي النشطة</h3>
+                <button class="modal-close" onclick="closeMyStreamsModal()">✕</button>
+            </div>
+            <div id="myStreamsContent">
+                <div style="text-align:center; padding:30px; color:#888;">⏳ جاري التحميل...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        //  🔒 Helpers
+        // ═══════════════════════════════════════════════════════════
+        function esc(s) {
+            if (s === null || s === undefined) return '';
+            return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+        }
+        function safeUrl(u) {
+            if (!u) return '#';
+            const s = String(u).trim();
+            if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s) || s.startsWith('/')) return s;
+            return '#';
+        }
+        function getGradeDocId(grade) {
+            if (!grade) return 'unknown';
+            return 'g_' + encodeURIComponent(grade)
+                .replace(/%/g, '_')
+                .replace(/[^a-zA-Z0-9_]/g, '')
+                .substring(0, 60);
+        }
+        function getBroadcastDocId(adminId, grade) {
+            if (!adminId || !grade) return 'unknown';
+            const safeAdminId = String(adminId).substring(0, 20).replace(/[^a-zA-Z0-9]/g, '');
+            const safeGrade = encodeURIComponent(grade)
+                .replace(/%/g, '_')
+                .replace(/[^a-zA-Z0-9_]/g, '')
+                .substring(0, 40);
+            return 'b_' + safeAdminId + '_' + safeGrade;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🖼️ ضغط الصور + تحويلها لـ Base64
+        // ═══════════════════════════════════════════════════════════
+        async function imageToBase64Compressed(file, maxWidth = 400, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith('image/')) {
+                    reject(new Error('الملف ليس صورة صالحة'));
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth) {
+                            height = Math.round((maxWidth / width) * height);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const base64 = canvas.toDataURL('image/jpeg', quality);
+
+                        if (base64.length > 700000) {
+                            const lowerQuality = Math.max(0.4, quality - 0.2);
+                            const retry = canvas.toDataURL('image/jpeg', lowerQuality);
+                            if (retry.length > 700000) {
+                                reject(new Error('⚠️ الصورة كبيرة جداً حتى بعد الضغط. جرب صورة أصغر.'));
+                            } else {
+                                resolve(retry);
+                            }
+                        } else {
+                            resolve(base64);
+                        }
+                    };
+                    img.onerror = () => reject(new Error('فشل قراءة الصورة'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function previewTeacherImage(input) {
+            const previewBox = document.getElementById('teacherImagePreview');
+            const previewImg = document.getElementById('teacherPreviewImg');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewBox.classList.add('active');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewBox.classList.remove('active');
+                previewImg.src = '';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🔥 Firebase (بدون Storage)
+        // ═══════════════════════════════════════════════════════════
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwvx9SmuHlot0ZyTzjKJL4XsEen4mi_3Y",
+            authDomain: "test-f5cb9.firebaseapp.com",
+            projectId: "test-f5cb9",
+            storageBucket: "test-f5cb9.firebasestorage.app",
+            messagingSenderId: "285536957191",
+            appId: "1:285536957191:web:8b1cd99ead5aabdd524ba2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentAdmin = null;
+        let currentBroadcastDocId = null;
+
+        async function getCollection(name) {
+            const snap = await db.collection(name).get();
+            return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        async function getUsers()    { return await getCollection('users');    }
+        async function getCourses()  { return await getCollection('courses');  }
+        async function getBooks()    { return await getCollection('books');    }
+        async function getTeachers() { return await getCollection('teachers'); }
+        async function getExams()    { return await getCollection('exams');    }
+        async function getBundles()  { return await getCollection('bundles');  }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🌙 دارك مود
+        // ═══════════════════════════════════════════════════════════
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'true' : 'false');
+            updateDarkModeButtons();
+        }
+        function updateDarkModeButtons() {
+            const isDark = document.body.classList.contains('dark-mode');
+            document.querySelectorAll('.btn-dark-mode').forEach(btn => btn.textContent = isDark ? '☀️' : '🌙');
+        }
+        function loadDarkModePreference() {
+            if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+            updateDarkModeButtons();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🔐 Auth Guard
+        // ═══════════════════════════════════════════════════════════
+        auth.onAuthStateChanged(async (fbUser) => {
+            if (!fbUser) { window.location.href = 'index.html'; return; }
+            try {
+                const doc = await db.collection('users').doc(fbUser.uid).get();
+                if (!doc.exists || doc.data().role !== 'admin' || !doc.data().active) {
+                    alert('⛔ ليس لديك صلاحية الوصول لهذه الصفحة.');
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+                currentAdmin = { id: doc.id, ...doc.data() };
+                document.getElementById('adminNameDisplay').textContent = currentAdmin.name + ' 👑';
+                document.getElementById('loadingOverlay').style.display = 'none';
+                initAdminPanel();
+            } catch (err) {
+                console.error(err);
+                await auth.signOut();
+                window.location.href = 'index.html';
+            }
+        });
+
+        async function logout() {
+            if (isLiveActive) await stopLiveStream();
+            try { await auth.signOut(); } catch(e) {}
+            window.location.href = 'index.html';
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📝 قوائم الصفوف
+        // ═══════════════════════════════════════════════════════════
+        function initGrades() {
+            const grades = ['الأول ابتدائي','الثاني ابتدائي','الثالث ابتدائي','الرابع ابتدائي','الخامس ابتدائي','السادس ابتدائي','الأول إعدادي','الثاني إعدادي','الثالث إعدادي','الأول ثانوي','الثاني ثانوي','الثالث ثانوي'];
+            ['bundleGrade', 'bookGrade', 'examGrade', 'courseGrade', 'liveGrade'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                grades.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = 'الصف ' + g;
+                    opt.textContent = 'الصف ' + g;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function searchStudents() { loadStudentsTable(); }
+        function clearSearch() {
+            const input = document.getElementById('studentSearchInput');
+            if (input) { input.value = ''; loadStudentsTable(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  👥 الطلاب
+        // ═══════════════════════════════════════════════════════════
+        async function loadStudentsTable() {
+            const allUsers = await getUsers();
+            const students = allUsers.filter(u => u.role === 'student');
+            const tbody = document.getElementById('studentsTableBody');
+
+            const searchInput = document.getElementById('studentSearchInput');
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            let displayStudents = students;
+            if (query) {
+                displayStudents = students.filter(u => {
+                    const name = (u.name || '').toLowerCase();
+                    const phone = (u.phone || '').toLowerCase();
+                    const parentPhone = (u.parentPhone || '').toLowerCase();
+                    return name.includes(query) || phone.includes(query) || parentPhone.includes(query);
+                });
+            }
+
+            const countEl = document.getElementById('searchResultsCount');
+            if (countEl) {
+                countEl.textContent = query ? `📊 عدد النتائج: ${displayStudents.length} من ${students.length}` : `📊 إجمالي الطلاب: ${students.length}`;
+            }
+
+            if (!students.length) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="alert alert-info" style="margin:10px 0;">📭 لا يوجد طلاب مسجلون حتى الآن.</div></td></tr>';
+                return;
+            }
+            if (!displayStudents.length) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="alert alert-warning" style="margin:10px 0;">🔍 لا توجد نتائج مطابقة للبحث.</div></td></tr>';
+                return;
+            }
+
+            let perms = {};
+            if (isLiveActive && currentBroadcastDocId) {
+                try {
+                    const permsSnap = await db.collection('liveStreams').doc(currentBroadcastDocId).collection('students').get();
+                    permsSnap.forEach(d => { perms[d.id] = d.data(); });
+                } catch(e) { console.warn(e); }
+            }
+
+            tbody.innerHTML = displayStudents.map((u, idx) => {
+                const studentPerms = perms[u.id] || {};
+                const camAllowed = studentPerms.cameraAllowed === true;
+                const micAllowed = studentPerms.micAllowed === true;
+
+                let liveBtns = '';
+                if (isLiveActive) {
+                    liveBtns = `
+                        <button onclick="toggleStudentCamera('${esc(u.id)}', ${!camAllowed})" class="btn-card ${camAllowed ? 'btn-success' : 'btn-cam-off'}" style="margin-right:5px; font-size:11px; padding:6px 12px;" title="صلاحية الكاميرا">
+                            ${camAllowed ? '📷 ✓' : '📷 ✗'}
+                        </button>
+                        <button onclick="toggleStudentMic('${esc(u.id)}', ${!micAllowed})" class="btn-card ${micAllowed ? 'btn-success' : 'btn-mic-off'}" style="margin-right:5px; font-size:11px; padding:6px 12px;" title="صلاحية المايك">
+                            ${micAllowed ? '🎤 ✓' : '🎤 ✗'}
+                        </button>
+                    `;
+                }
+
+                return `
+                <tr>
+                    <td>${idx+1}</td>
+                    <td>${esc(u.name)}</td>
+                    <td>${esc(u.grade || 'غير محدد')}</td>
+                    <td style="color:${u.active ? 'green' : 'red'}">${u.active ? '✅ مفعل' : '⏳ معلق'}</td>
+                    <td style="white-space: nowrap;">
+                        ${liveBtns}
+                        <button onclick="showStudentDetails('${esc(u.id)}')" class="btn-card btn-details" style="font-size:11px; padding:6px 12px;">📋</button>
+                        <button onclick="toggleStudent('${esc(u.id)}')" class="btn-card ${u.active ? 'btn-danger' : 'btn-success'}" style="margin-right:5px; font-size:11px; padding:6px 12px;">${u.active ? 'إلغاء' : 'تفعيل'}</button>
+                        <button onclick="deleteStudent('${esc(u.id)}')" class="btn-card btn-delete" style="margin-right:5px; font-size:11px; padding:6px 12px;">🗑️</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        async function showStudentDetails(id) {
+            const snap = await db.collection('users').doc(id).get();
+            if (!snap.exists) { alert('الطالب غير موجود.'); return; }
+            const u = { id: snap.id, ...snap.data() };
+
+            const initial = esc((u.name || '؟').charAt(0));
+            const isOutside = u.isOutside ? 'نعم 🌍 (صفارة)' : 'لا 🇪🇬';
+            const stageText = u.stage === 'primary' ? 'ابتدائي أزهري' :
+                              u.stage === 'preparatory' ? 'إعدادي أزهري' :
+                              u.stage === 'secondary' ? 'ثانوي أزهري' : (u.stage || 'غير محدد');
+
+            document.getElementById('studentDetailsContent').innerHTML = `
+                <div style="width:70px; height:70px; border-radius:50%; background:linear-gradient(135deg, #3b0a0a, #d4af37); color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900; margin:0 auto 18px; border:3px solid #d4af37;">${initial}</div>
+                <div class="detail-row"><span>👤 الاسم</span><strong>${esc(u.name) || '—'}</strong></div>
+                <div class="detail-row"><span>📧 البريد</span><span dir="ltr">${esc(u.email) || '—'}</span></div>
+                <div class="detail-row"><span>📞 رقم الطالب</span><span dir="ltr">${esc(u.phone) || '—'}</span></div>
+                <div class="detail-row"><span>👨‍👦 رقم ولي الأمر</span><span dir="ltr">${esc(u.parentPhone) || '—'}</span></div>
+                <div class="detail-row"><span>📍 المحافظة</span><strong>${esc(u.governorate) || '—'}</strong></div>
+                <div class="detail-row"><span>🏘️ المركز</span><strong>${esc(u.center) || '—'}</strong></div>
+                <div class="detail-row"><span>🌍 صفارة</span><strong>${isOutside}</strong></div>
+                <div class="detail-row"><span>🎓 المرحلة</span><strong>${esc(stageText)}</strong></div>
+                <div class="detail-row"><span>📚 الصف</span><strong>${esc(u.grade) || '—'}</strong></div>
+                <div class="detail-row"><span>📊 الحالة</span><strong style="color:${u.active ? 'green' : 'red'}">${u.active ? '✅ مفعل' : '⏳ معلق'}</strong></div>
+                <div class="detail-row"><span>📈 متوسط الدرجات</span><strong>${u.attempts ? (u.attempts.avg || 0) : 0}%</strong></div>
+                <div class="detail-row" style="border-bottom:none;"><span>✅ اختبارات محلولة</span><strong>${u.attempts ? (u.attempts.solved || 0) : 0}</strong></div>
+            `;
+            document.getElementById('studentDetailsModal').style.display = 'flex';
+        }
+        function closeStudentModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('studentDetailsModal').style.display = 'none';
+        }
+
+        async function toggleStudent(id) {
+            try {
+                const ref = db.collection('users').doc(id);
+                const snap = await ref.get();
+                if (!snap.exists) { alert('الطالب غير موجود.'); return; }
+                const newActive = !snap.data().active;
+                await ref.update({ active: newActive });
+                alert(newActive ? '✅ تم تفعيل الطالب' : '❌ تم إلغاء التفعيل');
+                loadStudentsTable();
+            } catch (err) { console.error(err); alert('❌ حدث خطأ.'); }
+        }
+
+        async function deleteStudent(id) {
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟')) return;
+            try {
+                await db.collection('users').doc(id).delete();
+                alert('✅ تم حذف الطالب.');
+                loadStudentsTable();
+            } catch (err) { console.error(err); alert('❌ حدث خطأ.'); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📦 الحزم
+        // ═══════════════════════════════════════════════════════════
+        async function loadBundlesTable() {
+            const bundles = await getBundles();
+            const tbody = document.getElementById('bundlesTableBody');
+            tbody.innerHTML = bundles.length ? bundles.map((b, idx) => `
+                <tr>
+                    <td>${idx+1}</td>
+                    <td><strong>${esc(b.title)}</strong></td>
+                    <td>${esc(b.grade)}</td>
+                    <td>${(b.items || []).length} عنصر</td>
+                    <td><button onclick="deleteBundle('${esc(b.id)}')" class="btn-card btn-danger">🗑️</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="5">لا توجد وحدات.</td></tr>';
+        }
+        async function deleteBundle(id) {
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذه الوحدة؟')) return;
+            try {
+                await db.collection('bundles').doc(id).delete();
+                loadBundlesTable();
+                populateBundleSelects();
+            } catch (err) { console.error(err); }
+        }
+
+        async function populateBundleSelects() {
+            const bundles = await getBundles();
+            const sel = document.getElementById('itemBundleSelect');
+            sel.innerHTML = '<option value="">اختر وحدة</option>';
+            bundles.forEach(b => {
+                const o = document.createElement('option');
+                o.value = b.id; o.textContent = b.title;
+                sel.appendChild(o);
+            });
+            const exams = await getExams();
+            const selExam = document.getElementById('itemExamSelect');
+            selExam.innerHTML = '<option value="">اختر اختبار</option>';
+            exams.forEach(e => {
+                const o = document.createElement('option');
+                o.value = e.id; o.textContent = e.title;
+                selExam.appendChild(o);
+            });
+            const courses = await getCourses();
+            const books = await getBooks();
+            const selP = document.getElementById('platformItemSelect');
+            selP.innerHTML = '<option value="">اختر عنصراً من المنصة</option>';
+            courses.forEach(c => {
+                const o = document.createElement('option');
+                o.value = JSON.stringify({ source: 'course', id: c.id });
+                o.textContent = '🎬 ' + c.title;
+                selP.appendChild(o);
+            });
+            books.forEach(b => {
+                const o = document.createElement('option');
+                o.value = JSON.stringify({ source: 'book', id: b.id });
+                o.textContent = '📄 ' + b.title;
+                selP.appendChild(o);
+            });
+        }
+
+        function toggleItemFields() {
+            const type = document.getElementById('itemType').value;
+            document.getElementById('sourceFields').style.display = (type === 'exam') ? 'none' : 'block';
+            document.getElementById('examFields').style.display = (type === 'exam') ? 'block' : 'none';
+            if (type !== 'exam') toggleSourceFields();
+        }
+        function toggleSourceFields() {
+            const t = document.getElementById('sourceType').value;
+            document.getElementById('manualFields').style.display = (t === 'platform') ? 'none' : 'block';
+            document.getElementById('platformFields').style.display = (t === 'platform') ? 'block' : 'none';
+        }
+
+        async function appendItemToBundle(bundleId, newItem) {
+            const ref = db.collection('bundles').doc(bundleId);
+            const snap = await ref.get();
+            if (!snap.exists) throw new Error('bundle not found');
+            const currentItems = snap.data().items || [];
+            await ref.update({ items: [...currentItems, newItem] });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📝 النماذج
+        // ═══════════════════════════════════════════════════════════
+        function setupForms() {
+            // 1) إضافة وحدة جديدة
+            document.getElementById('addBundleForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const title = document.getElementById('bundleTitle').value.trim();
+                const grade = document.getElementById('bundleGrade').value;
+                if (!title || !grade) { alert('املأ الحقول'); return; }
+                try {
+                    await db.collection('bundles').add({ title, grade, items: [] });
+                    document.getElementById('bundleAddMsg').innerHTML = '<div class="alert alert-success">✅ تم إنشاء الوحدة!</div>';
+                    this.reset();
+                    loadBundlesTable();
+                    populateBundleSelects();
+                } catch (err) { console.error(err); }
+            });
+
+            // 2) إضافة عنصر للوحدة
+            document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const bundleId = document.getElementById('itemBundleSelect').value;
+                const type = document.getElementById('itemType').value;
+                const msgDiv = document.getElementById('itemAddMsg');
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+
+                if (!bundleId) { alert('اختر وحدة أولاً'); return; }
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'جاري المعالجة...';
+
+                try {
+                    if (type === 'exam') {
+                        const examId = document.getElementById('itemExamSelect').value;
+                        const title = document.getElementById('examItemTitle').value.trim();
+                        if (!examId || !title) { alert('املأ بيانات الاختبار'); submitBtn.disabled = false; submitBtn.textContent = 'إضافة العنصر للوحدة'; return; }
+                        await appendItemToBundle(bundleId, { type: 'exam', title, examId });
+                        msgDiv.innerHTML = '<div class="alert alert-success">✅ تمت الإضافة!</div>';
+                        document.getElementById('examItemTitle').value = '';
+                        loadBundlesTable();
+                        return;
+                    }
+
+                    const sourceType = document.getElementById('sourceType').value;
+                    let title = '', link = '', itemType = type;
+
+                    if (sourceType === 'platform') {
+                        const pv = document.getElementById('platformItemSelect').value;
+                        if (!pv) { alert('اختر عنصراً'); return; }
+                        const po = JSON.parse(pv);
+                        if (po.source === 'course') {
+                            const s = (await getCourses()).find(c => c.id === po.id);
+                            if (!s) return;
+                            title = s.title; link = s.link; itemType = 'video';
+                        } else {
+                            const s = (await getBooks()).find(b => b.id === po.id);
+                            if (!s) return;
+                            title = s.title; link = s.link; itemType = 'pdf';
+                        }
+                        await appendItemToBundle(bundleId, { type: itemType, title, link });
+                    } else {
+                        title = document.getElementById('itemTitle').value.trim();
+                        link = document.getElementById('itemLink').value.trim();
+                        if (!title || !link) { alert('املأ العنوان والرابط'); return; }
+                        await appendItemToBundle(bundleId, { type: itemType, title, link });
+                    }
+                    msgDiv.innerHTML = '<div class="alert alert-success">✅ تمت الإضافة!</div>';
+                    document.getElementById('itemTitle').value = '';
+                    document.getElementById('itemLink').value = '';
+                    loadBundlesTable();
+                } catch (err) {
+                    console.error(err);
+                    msgDiv.innerHTML = '<div class="alert alert-warning">❌ خطأ: ' + esc(err.message || 'حدث خطأ') + '</div>';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'إضافة العنصر للوحدة';
+                }
+            });
+
+            // 3) إضافة محاضرة (رابط فقط)
+            document.getElementById('addCourseForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const title = document.getElementById('courseTitle').value.trim();
+                const grade = document.getElementById('courseGrade').value;
+                const link = document.getElementById('courseLink').value.trim();
+                const showInHome = document.getElementById('courseShowInHome').checked;
+                const msgDiv = document.getElementById('courseAddMsg');
+
+                if (!title || !grade || !link) { alert('املأ جميع الحقول'); return; }
+                try {
+                    await db.collection('courses').add({ title, grade, link, showInHome });
+                    msgDiv.innerHTML = '<div class="alert alert-success">✅ تمت الإضافة!</div>';
+                    this.reset();
+                    document.getElementById('courseShowInHome').checked = false;
+                    loadCoursesTable();
+                    populateBundleSelects();
+                } catch (err) {
+                    console.error(err);
+                    msgDiv.innerHTML = '<div class="alert alert-warning">❌ خطأ: ' + esc(err.message) + '</div>';
+                }
+            });
+
+            // 4) إضافة كتاب (رابط فقط)
+            document.getElementById('addBookForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const title = document.getElementById('bookTitle').value.trim();
+                const grade = document.getElementById('bookGrade').value;
+                const link = document.getElementById('bookLink').value.trim();
+                const showInHome = document.getElementById('bookShowInHome').checked;
+                const msgDiv = document.getElementById('bookAddMsg');
+
+                if (!title || !grade || !link) { alert('املأ جميع الحقول'); return; }
+                try {
+                    await db.collection('books').add({ title, grade, link, showInHome });
+                    msgDiv.innerHTML = '<div class="alert alert-success">✅ تمت الإضافة!</div>';
+                    this.reset();
+                    document.getElementById('bookShowInHome').checked = false;
+                    loadBooksTable();
+                    populateBundleSelects();
+                } catch (err) {
+                    console.error(err);
+                    msgDiv.innerHTML = '<div class="alert alert-warning">❌ خطأ: ' + esc(err.message) + '</div>';
+                }
+            });
+
+            // 5) إضافة مدرس (صورة Base64 أو رابط)
+            document.getElementById('addTeacherForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const name = document.getElementById('teacherName').value.trim();
+                const specialty = document.getElementById('teacherSpecialty').value.trim();
+                const imageUrl = document.getElementById('teacherImage').value.trim();
+                const f = document.getElementById('teacherImageFile');
+                const msgDiv = document.getElementById('teacherAddMsg');
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+
+                if (!name) { alert('ادخل الاسم'); return; }
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'جاري المعالجة...';
+
+                try {
+                    let finalImage = 'https://via.placeholder.com/150/3b0a0a/d4af37?text=' + encodeURIComponent(name.charAt(0));
+
+                    if (f.files.length > 0) {
+                        finalImage = await imageToBase64Compressed(f.files[0], 400, 0.8);
+                        msgDiv.innerHTML = '<div class="alert alert-info">📸 تم ضغط الصورة وحفظها. جاري الإضافة...</div>';
+                    } else if (imageUrl) {
+                        finalImage = imageUrl;
+                    }
+
+                    await db.collection('teachers').add({ name, specialty, image: finalImage });
+                    msgDiv.innerHTML = '<div class="alert alert-success">✅ تمت الإضافة!</div>';
+                    this.reset();
+                    document.getElementById('teacherImagePreview').classList.remove('active');
+                    loadTeachersTable();
+                } catch (err) {
+                    console.error(err);
+                    msgDiv.innerHTML = '<div class="alert alert-warning">❌ ' + esc(err.message || 'حدث خطأ') + '</div>';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'إضافة المدرس';
+                }
+            });
+
+            document.getElementById('liveStreamForm').addEventListener('submit', startLiveStream);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📝 الاختبارات
+        // ═══════════════════════════════════════════════════════════
+        function generateQuestionBoxes() {
+            const count = parseInt(document.getElementById('examQuestionCount').value);
+            const title = document.getElementById('examTitle').value.trim();
+            const grade = document.getElementById('examGrade').value;
+            if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
+            if (!count || count < 1 || count > 50) { alert('أدخل عدد 1-50'); return; }
+
+            let html = '<h4 style="color:#3b0a0a; margin:18px 0; border-top:1px dashed #ddd; padding-top:18px;">الأسئلة:</h4>';
+            for (let i = 0; i < count; i++) {
+                html += `
+                    <div class="question-box-generator">
+                        <h4 style="font-size:15px;">السؤال ${i + 1}</h4>
+                        <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <input type="text" class="opt-input" placeholder="الخيار 1" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                            <input type="text" class="opt-input" placeholder="الخيار 2" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                            <input type="text" class="opt-input" placeholder="الخيار 3" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                            <input type="text" class="opt-input" placeholder="الخيار 4" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                        </div>
+                        <div style="margin-top:10px;">
+                            <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
+                            <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
+                                <option value="1">الخيار 1</option>
+                                <option value="2">الخيار 2</option>
+                                <option value="3">الخيار 3</option>
+                                <option value="4">الخيار 4</option>
+                            </select>
+                        </div>
+                    </div>`;
+            }
+            document.getElementById('questionsContainer').innerHTML = html;
+            document.getElementById('saveExamBtn').style.display = 'block';
+            document.getElementById('examAddMsg').innerHTML = '<div class="alert alert-success">✅ تم توليد ' + count + ' أسئلة.</div>';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🔒 saveFullExam — النسخة الآمنة (تفصل الإجابات)
+        // ═══════════════════════════════════════════════════════════
+        async function saveFullExam() {
+            const title = document.getElementById('examTitle').value.trim();
+            const grade = document.getElementById('examGrade').value;
+            const oneTimeOnly = document.getElementById('examOneTimeOnly').checked;
+            const boxes = document.querySelectorAll('.question-box-generator');
+            if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
+            if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
+
+            const questionsPublic = [];  // بدون الإجابات
+            const answersPrivate  = [];  // الإجابات فقط
+
+            for (let i = 0; i < boxes.length; i++) {
+                const box = boxes[i];
+                const q = box.querySelector('.q-text-input').value.trim();
+                const opts = Array.from(box.querySelectorAll('.opt-input')).map(x => x.value.trim());
+                const correct = parseInt(box.querySelector('.correct-select').value) - 1;
+                if (!q || opts.includes('')) { alert('يرجى ملء السؤال رقم ' + (i + 1)); return; }
+                questionsPublic.push({ q, options: opts });
+                answersPrivate.push(correct);
+            }
+
+            try {
+                // ═══ 🔒 فصل الإجابات عن الأسئلة ═══
+                const newDocRef = db.collection('exams').doc();  // معرّف جديد
+
+                // 1) حفظ الأسئلة بدون إجابات (يقرأها الطالب)
+                await newDocRef.set({
+                    title, grade, oneTimeOnly,
+                    questions: questionsPublic
+                });
+
+                // 2) الإجابات في subcollection محمي (_private) — الأدمن فقط
+                await newDocRef.collection('_private').doc('key').set({
+                    answers: answersPrivate
+                });
+
+                document.getElementById('questionsContainer').innerHTML = '';
+                document.getElementById('saveExamBtn').style.display = 'none';
+                document.getElementById('examAddMsg').innerHTML =
+                    '<div class="alert alert-success">✅ تم إنشاء الاختبار بأمان!</div>';
+                alert('✅ تم إنشاء الاختبار بنجاح!\n(الإجابات محفوظة في مخزن محمي)');
+                document.getElementById('examSetupForm').reset();
+                populateBundleSelects();
+                loadExamsTable();
+                window.scrollTo(0, 0);
+            } catch (err) {
+                console.error(err);
+                alert('❌ خطأ في الحفظ: ' + (err.message || ''));
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🎯 تصحيح تلقائي للمحاولات المعلقة
+        //  يشتغل تلقائياً كل 30 ثانية
+        // ═══════════════════════════════════════════════════════════
+        async function gradePendingAttempts() {
+            try {
+                const pendingSnap = await db.collection('examAttempts')
+                    .where('pending', '==', true)
+                    .limit(50)
+                    .get();
+
+                if (pendingSnap.empty) return;
+
+                console.log(`🎯 تصحيح ${pendingSnap.size} محاولة معلقة...`);
+                let gradedCount = 0;
+
+                for (const attemptDoc of pendingSnap.docs) {
+                    const attempt = attemptDoc.data();
+
+                    // نجيب الإجابات من _private
+                    const keyDoc = await db.collection('exams')
+                        .doc(attempt.examId)
+                        .collection('_private').doc('key')
+                        .get();
+
+                    if (!keyDoc.exists) {
+                        console.warn(`⚠️ لا توجد إجابات للاختبار ${attempt.examId}`);
+                        continue;
+                    }
+
+                    const answers = keyDoc.data().answers || [];
+                    const studentAnswers = attempt.studentAnswers || [];
+
+                    let correct = 0, wrong = 0, unanswered = 0;
+                    for (let i = 0; i < answers.length; i++) {
+                        const sa = studentAnswers[i];
+                        if (sa === null || sa === undefined) unanswered++;
+                        else if (sa === answers[i]) correct++;
+                        else wrong++;
+                    }
+
+                    const total = answers.length || 1;
+                    const score = Math.round((correct / total) * 100);
+
+                    await attemptDoc.ref.update({
+                        score,
+                        correctCount: correct,
+                        wrongCount: wrong,
+                        unanswered,
+                        pending: false,
+                        gradedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    gradedCount++;
+                }
+
+                if (gradedCount > 0) {
+                    console.log(`✅ تم تصحيح ${gradedCount} محاولة`);
+                }
+            } catch (err) {
+                console.error('gradePendingAttempts error:', err);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📋 الجداول
+        // ═══════════════════════════════════════════════════════════
+        async function loadCoursesTable() {
+            const courses = await getCourses();
+            const tbody = document.getElementById('coursesTableBody');
+            tbody.innerHTML = courses.length ? courses.map((c, idx) => `
+                <tr><td>${idx+1}</td><td><strong>${esc(c.title)}</strong></td><td>${esc(c.grade)}</td><td>${c.link ? 'موجود' : 'لا يوجد'}</td><td><button onclick="deleteCourse('${esc(c.id)}')" class="btn-card btn-danger">🗑️</button></td></tr>
+            `).join('') : '<tr><td colspan="5">لا توجد محاضرات</td></tr>';
+        }
+        async function deleteCourse(id) {
+            if (!confirm('حذف هذه المحاضرة؟')) return;
+            try { await db.collection('courses').doc(id).delete(); loadCoursesTable(); populateBundleSelects(); }
+            catch (err) { console.error(err); }
+        }
+
+        async function loadBooksTable() {
+            const books = await getBooks();
+            const tbody = document.getElementById('booksTableBody');
+            tbody.innerHTML = books.length ? books.map((b, idx) => `
+                <tr><td>${idx+1}</td><td><strong>${esc(b.title)}</strong></td><td>${esc(b.grade)}</td><td>${b.link ? 'موجود' : 'لا يوجد'}</td><td><button onclick="deleteBook('${esc(b.id)}')" class="btn-card btn-danger">🗑️</button></td></tr>
+            `).join('') : '<tr><td colspan="5">لا توجد كتب</td></tr>';
+        }
+        async function deleteBook(id) {
+            if (!confirm('حذف هذا الكتاب؟')) return;
+            try { await db.collection('books').doc(id).delete(); loadBooksTable(); populateBundleSelects(); }
+            catch (err) { console.error(err); }
+        }
+
+        async function loadTeachersTable() {
+            const teachers = await getTeachers();
+            const tbody = document.getElementById('teachersTableBody');
+            tbody.innerHTML = teachers.length ? teachers.map((t, idx) => `
+                <tr><td>${idx+1}</td><td>${esc(t.name)}</td><td>${t.image ? `<img src="${esc(safeUrl(t.image))}" width="40" style="border-radius:50%;border:2px solid #d4af37;">` : 'لا توجد'}</td><td><button onclick="deleteTeacher('${esc(t.id)}')" class="btn-card btn-danger">🗑️</button></td></tr>
+            `).join('') : '<tr><td colspan="4">لا يوجد مدرسين</td></tr>';
+        }
+        async function deleteTeacher(id) {
+            if (!confirm('حذف هذا المدرس؟')) return;
+            try { await db.collection('teachers').doc(id).delete(); loadTeachersTable(); }
+            catch (err) { console.error(err); }
+        }
+
+        async function loadExamsTable() {
+            const exams = await getExams();
+            const tbody = document.getElementById('examsTableBody');
+            if (!exams.length) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="alert alert-info">📭 لا توجد اختبارات.</div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = exams.map((exam, idx) => `
+                <tr>
+                    <td>${idx+1}</td>
+                    <td><strong>${esc(exam.title)}</strong></td>
+                    <td>${esc(exam.grade)}</td>
+                    <td>${exam.questions ? exam.questions.length : 0}</td>
+                    <td>${exam.oneTimeOnly ? '<span style="background:#d4af37; color:#3b0a0a; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔒 مرة واحدة</span>' : '<span style="background:#2a7a2a; color:#fff; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔓 دائم</span>'}</td>
+                    <td><button onclick="deleteExam('${esc(exam.id)}')" class="btn-card btn-delete">🗑️</button></td>
+                </tr>
+            `).join('');
+        }
+        async function deleteExam(id) {
+            if (!confirm('⚠️ حذف هذا الاختبار نهائياً؟')) return;
+            try {
+                // حذف الإجابات المحمية أولاً
+                try {
+                    await db.collection('exams').doc(id).collection('_private').doc('key').delete();
+                } catch(e) { /* قد لا تكون موجودة لو الاختبار قديم */ }
+                await db.collection('exams').doc(id).delete();
+                alert('✅ تم الحذف.');
+                loadExamsTable();
+                populateBundleSelects();
+            } catch (err) { console.error(err); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🧭 التنقل
+        // ═══════════════════════════════════════════════════════════
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.admin-tabs button').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+            if (target) target.classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabId === 'students') loadStudentsTable();
+            if (tabId === 'bundles') loadBundlesTable();
+            if (tabId === 'courses') loadCoursesTable();
+            if (tabId === 'books') loadBooksTable();
+            if (tabId === 'teachers') loadTeachersTable();
+            if (tabId === 'exams') loadExamsTable();
+            if (tabId === 'addBundle') populateBundleSelects();
+            if (tabId === 'liveStream') {
+                loadLiveStreamStatus();
+                refreshMyStreamsCount();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  🔴 البث المباشر
+        // ═══════════════════════════════════════════════════════════
+        let liveLocalStream = null;
+        let isLiveActive = false;
+        let adminCamEnabled = true;
+        let adminMicEnabled = true;
+        let peerConnections = {};
+        let studentStreams = {};
+        let studentsUnsubscribe = null;
+        let studentDocUnsubscribes = {};
+
+        let adminFacingMode = 'user';
+        let adminCurrentCamIndex = 0;
+        let adminAvailableCameras = [];
+        let adminCurrentCamName = 'Front 1';
+        let adminCamerasCache = [];
+
+        const ICE_SERVERS = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ]
+        };
+
+        async function getLiveStream() {
+            const source = document.getElementById('liveSource').value;
+
+            if (source === 'screen') {
+                if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+                    throw new Error('screen_not_supported');
+                }
+                return await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: 15 },
+                    audio: true
+                });
+            }
+
+            return await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: adminFacingMode },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: true
+            });
+        }
+
+        async function getAdminCamerasList() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cams = devices.filter(d => d.kind === 'videoinput');
+                if (cams.length === 0) return [];
+
+                let frontCount = 0, backCount = 0, otherCount = 0;
+                const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                const result = cams.map((cam, idx) => {
+                    const rawLabel = (cam.label || '').toLowerCase();
+                    let facing = 'unknown';
+                    let name = '';
+
+                    if (rawLabel.includes('front') || rawLabel.includes('user') ||
+                        rawLabel.includes('facetime') || rawLabel.includes('face')) {
+                        frontCount++;
+                        facing = 'front';
+                        name = 'Front ' + frontCount;
+                    } else if (rawLabel.includes('back') || rawLabel.includes('rear') ||
+                               rawLabel.includes('environment') || rawLabel.includes('world')) {
+                        backCount++;
+                        facing = 'back';
+                        name = 'Back ' + backCount;
+                    } else {
+                        if (isMobile) {
+                            if (idx === 0 && frontCount === 0) {
+                                frontCount++;
+                                facing = 'front';
+                                name = 'Front ' + frontCount;
+                            } else {
+                                backCount++;
+                                facing = 'back';
+                                name = 'Back ' + backCount;
+                            }
+                        } else {
+                            otherCount++;
+                            facing = 'unknown';
+                            name = 'Camera ' + otherCount;
+                        }
+                    }
+
+                    return { deviceId: cam.deviceId, rawLabel: cam.label || '', facing, name };
+                });
+
+                adminCamerasCache = result;
+                return result;
+            } catch(e) {
+                console.error('enumerateDevices error:', e);
+                return [];
+            }
+        }
+
+        async function loadAdminCamerasList() {
+            const list = await getAdminCamerasList();
+            adminAvailableCameras = list;
+            return list;
+        }
+
+        async function shouldShowSwitchCameraBtn() {
+            const cams = await getAdminCamerasList();
+            if (cams.length >= 2) return true;
+            if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
+            return false;
+        }
+
+        async function detectCurrentAdminCamName(track) {
+            if (!track) return 'Front 1';
+            const settings = track.getSettings();
+            const currentId = settings.deviceId;
+
+            if (!adminCamerasCache || adminCamerasCache.length === 0) {
+                await getAdminCamerasList();
+            }
+
+            const found = adminCamerasCache.find(c => c.deviceId === currentId);
+            if (found) return found.name;
+
+            const facing = settings.facingMode || adminFacingMode;
+            if (facing === 'environment') return 'Back 1';
+            if (facing === 'user') return 'Front 1';
+            return 'Camera 1';
+        }
+
+        async function switchAdminCamera() {
+            if (!liveLocalStream) return;
+
+            const oldVideoTrack = liveLocalStream.getVideoTracks()[0];
+            if (!oldVideoTrack) return;
+
+            const cams = await getAdminCamerasList();
+            if (cams.length < 2) {
+                alert('⚠️ لا توجد كاميرا أخرى للتبديل.');
+                return;
+            }
+
+            const currentId = oldVideoTrack.getSettings().deviceId;
+            let currentIdx = cams.findIndex(c => c.deviceId === currentId);
+            if (currentIdx === -1) currentIdx = 0;
+
+            const nextIdx = (currentIdx + 1) % cams.length;
+            const nextCam = cams[nextIdx];
+
+            const switchBtn = document.getElementById('btnSwitchCam');
+            if (switchBtn) {
+                switchBtn.innerHTML = '<span>⏳</span> <span>جاري التبديل...</span>';
+            }
+
+            let newVideoTrack = null;
+
+            try {
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        deviceId: { exact: nextCam.deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+                newVideoTrack = newStream.getVideoTracks()[0];
+            } catch(e) {
+                console.warn('deviceId failed, trying facingMode:', e);
+                try {
+                    const newFacing = adminFacingMode === 'user' ? 'environment' : 'user';
+                    const newStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: newFacing }, width: 1280, height: 720 },
+                        audio: false
+                    });
+                    newVideoTrack = newStream.getVideoTracks()[0];
+                    adminFacingMode = newFacing;
+                } catch(e2) {
+                    console.error('All switch attempts failed:', e2);
+                    alert('⚠️ تعذّر تبديل الكاميرا.');
+                    if (switchBtn) {
+                        switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
+                    }
+                    return;
+                }
+            }
+
+            if (!newVideoTrack) return;
+
+            newVideoTrack.enabled = adminCamEnabled;
+
+            for (const studentId of Object.keys(peerConnections)) {
+                const pc = peerConnections[studentId];
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) {
+                    try { await sender.replaceTrack(newVideoTrack); } catch(e) { console.warn(e); }
+                }
+            }
+
+            liveLocalStream.removeTrack(oldVideoTrack);
+            oldVideoTrack.stop();
+            liveLocalStream.addTrack(newVideoTrack);
+
+            const preview = document.getElementById('localPreview');
+            if (preview) preview.srcObject = liveLocalStream;
+
+            adminCurrentCamName = await detectCurrentAdminCamName(newVideoTrack);
+
+            if (switchBtn) {
+                switchBtn.innerHTML = '<span>🔄</span> <span>✅ ' + adminCurrentCamName + '</span>';
+                setTimeout(() => {
+                    switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
+                }, 1200);
+            }
+        }
+
+        async function startLiveStream(e) {
+            e.preventDefault();
+            const title = document.getElementById('liveTitle').value.trim();
+            const grade = document.getElementById('liveGrade').value;
+            const msg = document.getElementById('liveStreamMsg');
+            const startBtn = document.getElementById('startLiveBtn');
+
+            if (!title || !grade) {
+                msg.innerHTML = '<div class="alert alert-warning">⚠️ املأ العنوان والصف.</div>';
+                return;
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = 'جاري التحضير...';
+            msg.innerHTML = '';
+
+            const gradeDocId = getBroadcastDocId(currentAdmin.id, grade);
+
+            try {
+                const myActiveStreams = await db.collection('liveStreams')
+                    .where('adminId', '==', currentAdmin.id)
+                    .where('isLive', '==', true)
+                    .get();
+
+                if (myActiveStreams.size >= 10) {
+                    msg.innerHTML = '<div class="alert alert-warning">⚠️ لديك 10 بثوث نشطة بالفعل. أوقف واحد منهم أولاً.</div>';
+                    startBtn.disabled = false;
+                    startBtn.textContent = '🔴 بدء البث';
+                    return;
+                }
+            } catch(e) { console.warn('Rate limit check:', e); }
+
+            try {
+                liveLocalStream = await getLiveStream();
+
+                if (document.getElementById('liveSource').value === 'camera') {
+                    try {
+                        const settings = liveLocalStream.getVideoTracks()[0]?.getSettings();
+                        if (settings && settings.facingMode) adminFacingMode = settings.facingMode;
+                    } catch(e) {}
+                }
+
+                adminCamEnabled = liveLocalStream.getVideoTracks().length > 0;
+                adminMicEnabled = liveLocalStream.getAudioTracks().length > 0;
+
+                document.getElementById('localPreview').srcObject = liveLocalStream;
+                document.getElementById('localPreviewContainer').style.display = 'block';
+
+                currentBroadcastDocId = gradeDocId;
+
+                try {
+                    const oldSnap = await db.collection('liveStreams').doc(gradeDocId).collection('students').get();
+                    const batch = db.batch();
+                    oldSnap.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    console.log('🧹 تم مسح بيانات الطلاب القديمة');
+                } catch(e) { console.warn('Cleanup error:', e); }
+
+                await db.collection('liveStreams').doc(gradeDocId).set({
+                    isLive: true,
+                    title, grade,
+                    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    adminId: currentAdmin.id,
+                    adminName: currentAdmin.name,
+                    settings: { allowAllCameras: false, allowAllMics: false }
+                });
+
+                isLiveActive = true;
+                msg.innerHTML = '<div class="alert alert-success">✅ البث بدأ! في انتظار الطلاب...</div>';
+                startBtn.style.display = 'none';
+                document.getElementById('stopLiveBtn').style.display = 'inline-block';
+                document.getElementById('liveToolbar').style.display = 'flex';
+                document.getElementById('permissionPanel').style.display = 'block';
+                document.getElementById('studentStreamsContainer').style.display = 'block';
+
+                updateAdminCamBtn();
+                updateAdminMicBtn();
+
+                const sourceNow = document.getElementById('liveSource').value;
+                if (sourceNow === 'camera') {
+                    const showSwitch = await shouldShowSwitchCameraBtn();
+                    const switchBtn = document.getElementById('btnSwitchCam');
+                    if (switchBtn) {
+                        const videoTrack = liveLocalStream.getVideoTracks()[0];
+                        adminCurrentCamName = await detectCurrentAdminCamName(videoTrack);
+                        switchBtn.style.display = showSwitch ? 'inline-flex' : 'none';
+                        switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
+                    }
+                } else {
+                    const switchBtn = document.getElementById('btnSwitchCam');
+                    if (switchBtn) switchBtn.style.display = 'none';
+                }
+
+                document.getElementById('liveStreamStatusBox').innerHTML = `
+                    <div style="background:#d4edda; color:#155724; border:2px solid #2a7a2a; padding:15px; border-radius:16px; display:flex; align-items:center; gap:10px;">
+                        <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+                        <span><strong>${esc(title)}</strong> — ${esc(grade)}</span>
+                    </div>
+                `;
+
+                studentsUnsubscribe = db.collection('liveStreams').doc(gradeDocId).collection('students')
+                    .onSnapshot(snap => {
+                        snap.docChanges().forEach(change => {
+                            if (change.type === 'added') {
+                                createPeerForStudent(change.doc.id, change.doc.data());
+                            }
+                        });
+                    });
+
+                liveLocalStream.getVideoTracks()[0]?.addEventListener('ended', () => stopLiveStream());
+
+                refreshMyStreamsCount();
+
+            } catch (err) {
+                console.error(err);
+                let errorMsg = '❌ تعذّر الوصول للكاميرا/الشاشة.';
+
+                if (err.message === 'screen_not_supported') {
+                    errorMsg = '⚠️ مشاركة الشاشة غير مدعومة على هذا الجهاز/المتصفح. اختر "📷 كاميرا" بدلاً منها.';
+                } else if (err.name === 'NotAllowedError') {
+                    errorMsg = '⚠️ تم رفض الصلاحية. يرجى السماح بالوصول للكاميرا/الميكروفون.';
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = '⚠️ لم يتم العثور على كاميرا أو ميكروفون.';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg = '⚠️ الكاميرا مستخدمة من تطبيق آخر. أغلق التطبيقات الأخرى وحاول مرة أخرى.';
+                }
+
+                msg.innerHTML = '<div class="alert alert-warning">' + errorMsg + '</div>';
+                startBtn.disabled = false;
+                startBtn.textContent = '🔴 بدء البث';
+            }
+        }
+
+        async function createPeerForStudent(studentId, studentData) {
+            if (peerConnections[studentId]) return;
+
+            console.log('📞 طالب جديد:', studentId);
+            const pc = new RTCPeerConnection(ICE_SERVERS);
+            peerConnections[studentId] = pc;
+
+            liveLocalStream.getTracks().forEach(track => {
+                pc.addTrack(track, liveLocalStream);
+            });
+
+            pc.ontrack = (event) => {
+                console.log('📺 وصل فيديو الطالب:', studentId);
+                addStudentStream(studentId, event.streams[0]);
+            };
+
+            pc.onicecandidate = async (event) => {
+                if (event.candidate) {
+                    try {
+                        await db.collection('liveStreams').doc(currentBroadcastDocId)
+                            .collection('students').doc(studentId)
+                            .set({
+                                adminCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON())
+                            }, { merge: true });
+                    } catch(e) { console.warn('ICE send error:', e); }
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                console.log(`🔗 ${studentId}: ${pc.connectionState}`);
+                if (pc.connectionState === 'failed') {
+                    setTimeout(() => {
+                        if (pc.connectionState === 'failed') cleanupPeer(studentId);
+                    }, 5000);
+                }
+            };
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            await db.collection('liveStreams').doc(currentBroadcastDocId)
+                .collection('students').doc(studentId)
+                .set({
+                    offer: { type: offer.type, sdp: offer.sdp },
+                    adminId: currentAdmin.id,
+                    adminCandidates: []
+                }, { merge: true });
+
+            const unsub = db.collection('liveStreams').doc(currentBroadcastDocId)
+                .collection('students').doc(studentId)
+                .onSnapshot(async (snap) => {
+                    if (!snap.exists) return;
+                    const data = snap.data();
+
+                    if (data.answer && !pc.currentRemoteDescription) {
+                        try {
+                            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                            console.log(`✅ ${studentId}: setRemoteDescription نجح`);
+                        } catch(e) { console.warn('setRemote error:', e); }
+                    }
+
+                    if (data.studentCandidates && pc.remoteDescription) {
+                        for (const c of data.studentCandidates) {
+                            try {
+                                await pc.addIceCandidate(new RTCIceCandidate(c));
+                            } catch(e) { }
+                        }
+                    }
+                });
+
+            studentDocUnsubscribes[studentId] = unsub;
+            updateViewerCount();
+        }
+
+        function cleanupPeer(studentId) {
+            if (peerConnections[studentId]) {
+                try { peerConnections[studentId].close(); } catch(e) {}
+                delete peerConnections[studentId];
+            }
+            if (studentDocUnsubscribes[studentId]) {
+                try { studentDocUnsubscribes[studentId](); } catch(e) {}
+                delete studentDocUnsubscribes[studentId];
+            }
+            removeStudentStream(studentId);
+            updateViewerCount();
+        }
+
+        function updateViewerCount() {
+            const el = document.getElementById('viewerCount');
+            if (el) el.textContent = Object.keys(peerConnections).length;
+        }
+
+        function toggleAdminCamera() {
+            if (!liveLocalStream) return;
+            const videoTrack = liveLocalStream.getVideoTracks()[0];
+            if (!videoTrack) return;
+            adminCamEnabled = !adminCamEnabled;
+            videoTrack.enabled = adminCamEnabled;
+            updateAdminCamBtn();
+        }
+
+        function toggleAdminMic() {
+            if (!liveLocalStream) return;
+            const audioTrack = liveLocalStream.getAudioTracks()[0];
+            if (!audioTrack) return;
+            adminMicEnabled = !adminMicEnabled;
+            audioTrack.enabled = adminMicEnabled;
+            updateAdminMicBtn();
+        }
+
+        function updateAdminCamBtn() {
+            const btn = document.getElementById('btnAdminCam');
+            if (!btn) return;
+            if (adminCamEnabled) {
+                btn.className = 'neutral';
+                btn.innerHTML = '<span>📷</span> <span>إيقاف الكاميرا</span>';
+            } else {
+                btn.className = 'inactive';
+                btn.innerHTML = '<span>📷</span> <span>تشغيل الكاميرا</span>';
+            }
+        }
+
+        function updateAdminMicBtn() {
+            const btn = document.getElementById('btnAdminMic');
+            if (!btn) return;
+            if (adminMicEnabled) {
+                btn.className = 'neutral';
+                btn.innerHTML = '<span>🎤</span> <span>إيقاف المايك</span>';
+            } else {
+                btn.className = 'inactive';
+                btn.innerHTML = '<span>🎤</span> <span>تشغيل المايك</span>';
+            }
+        }
+
+        async function stopLiveStream() {
+            const msg = document.getElementById('liveStreamMsg');
+
+            Object.keys(peerConnections).forEach(id => cleanupPeer(id));
+
+            if (studentsUnsubscribe) {
+                try { studentsUnsubscribe(); } catch(e) {}
+                studentsUnsubscribe = null;
+            }
+
+            if (liveLocalStream) {
+                liveLocalStream.getTracks().forEach(t => t.stop());
+                liveLocalStream = null;
+            }
+
+            const docId = currentBroadcastDocId || 'current';
+
+            try {
+                const studentsSnap = await db.collection('liveStreams').doc(docId).collection('students').get();
+                const batch = db.batch();
+                studentsSnap.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            } catch(e) { console.warn(e); }
+
+            try {
+                await db.collection('liveStreams').doc(docId).update({
+                    isLive: false,
+                    stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) { console.error(e); }
+
+            currentBroadcastDocId = null;
+            isLiveActive = false;
+
+            document.getElementById('localPreviewContainer').style.display = 'none';
+            document.getElementById('liveToolbar').style.display = 'none';
+            document.getElementById('permissionPanel').style.display = 'none';
+            document.getElementById('studentStreamsContainer').style.display = 'none';
+            document.getElementById('startLiveBtn').style.display = 'inline-block';
+            document.getElementById('startLiveBtn').disabled = false;
+            document.getElementById('startLiveBtn').textContent = '🔴 بدء البث';
+            document.getElementById('stopLiveBtn').style.display = 'none';
+            document.getElementById('liveStreamStatusBox').innerHTML = '<div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط</div>';
+            if (msg) msg.innerHTML = '<div class="alert alert-warning">⏹️ تم إيقاف البث.</div>';
+
+            const switchBtn = document.getElementById('btnSwitchCam');
+            if (switchBtn) {
+                switchBtn.style.display = 'none';
+                switchBtn.innerHTML = '<span>🔄</span> <span>Front 1</span>';
+            }
+
+            adminFacingMode = 'user';
+            adminCurrentCamName = 'Front 1';
+            adminCamerasCache = [];
+
+            loadStudentsTable();
+            loadLiveStreamStatus();
+            refreshMyStreamsCount();
+        }
+
+        function addStudentStream(studentId, stream) {
+            const grid = document.getElementById('studentStreamsGrid');
+            let card = document.getElementById('student-stream-' + studentId);
+
+            if (!card) {
+                card = document.createElement('div');
+                card.id = 'student-stream-' + studentId;
+                card.className = 'student-stream-card';
+                card.innerHTML = `
+                    <video autoplay playsinline muted></video>
+                    <div class="student-name">👤 طالب</div>
+                `;
+                grid.appendChild(card);
+            }
+
+            const video = card.querySelector('video');
+            video.srcObject = stream;
+            video.play().catch(e => console.warn(e));
+
+            studentStreams[studentId] = { videoEl: video };
+
+            findStudentNameById(studentId).then(name => {
+                if (name) card.querySelector('.student-name').textContent = '👤 ' + name;
+            });
+        }
+
+        async function findStudentNameById(uid) {
+            try {
+                const snap = await db.collection('users').doc(uid).get();
+                if (snap.exists) return snap.data().name;
+            } catch(e) {}
+            return null;
+        }
+
+        function removeStudentStream(studentId) {
+            const card = document.getElementById('student-stream-' + studentId);
+            if (card) card.remove();
+            delete studentStreams[studentId];
+        }
+
+        async function saveGlobalPermissions() {
+            if (!isLiveActive || !currentBroadcastDocId) return;
+            const allowAllCameras = document.getElementById('permAllCameras').checked;
+            const allowAllMics = document.getElementById('permAllMics').checked;
+            try {
+                await db.collection('liveStreams').doc(currentBroadcastDocId).update({
+                    'settings.allowAllCameras': allowAllCameras,
+                    'settings.allowAllMics': allowAllMics
+                });
+            } catch(err) { console.error(err); }
+        }
+
+        async function toggleStudentCamera(studentId, allowed) {
+            if (!isLiveActive || !currentBroadcastDocId) return;
+            try {
+                await db.collection('liveStreams').doc(currentBroadcastDocId)
+                    .collection('students').doc(studentId)
+                    .set({ cameraAllowed: allowed }, { merge: true });
+                loadStudentsTable();
+            } catch(err) { console.error(err); }
+        }
+
+        async function toggleStudentMic(studentId, allowed) {
+            if (!isLiveActive || !currentBroadcastDocId) return;
+            try {
+                await db.collection('liveStreams').doc(currentBroadcastDocId)
+                    .collection('students').doc(studentId)
+                    .set({ micAllowed: allowed }, { merge: true });
+                loadStudentsTable();
+            } catch(err) { console.error(err); }
+        }
+
+        async function loadLiveStreamStatus() {
+            try {
+                const snap = await db.collection('liveStreams').get();
+                const box = document.getElementById('liveStreamStatusBox');
+                if (!box) return;
+
+                const activeStreams = snap.docs.filter(d => d.data().isLive);
+
+                if (activeStreams.length === 0) {
+                    box.innerHTML = '<div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط حالياً</div>';
+                    return;
+                }
+
+                box.innerHTML = activeStreams.map(d => {
+                    const data = d.data();
+                    const isMine = data.adminId === (currentAdmin ? currentAdmin.id : '');
+                    return `
+                        <div style="background:${isMine ? '#d4edda' : '#fff3cd'}; color:${isMine ? '#155724' : '#856404'}; border:2px solid ${isMine ? '#2a7a2a' : '#d4af37'}; padding:15px; border-radius:16px; margin-bottom:10px;">
+                            <strong>🔴 بث نشط:</strong> ${esc(data.title || 'بدون عنوان')} — ${esc(data.grade || '')}
+                            <br><small>👤 ${esc(data.adminName || 'أدمن')} ${isMine ? '(أنت)' : ''}</small>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function refreshMyStreamsCount() {
+            if (!currentAdmin) return;
+            try {
+                const snap = await db.collection('liveStreams').get();
+                const mine = snap.docs.filter(d => d.data().isLive && d.data().adminId === currentAdmin.id);
+                const badge = document.getElementById('myStreamsCount');
+                if (badge) {
+                    badge.textContent = mine.length;
+                    badge.style.background = mine.length > 0 ? '#ffd966' : '#fff';
+                    badge.style.color = '#144266';
+                }
+            } catch(e) { console.warn('refreshMyStreamsCount:', e); }
+        }
+
+        async function showMyStreamsModal() {
+            if (!currentAdmin) return;
+            const modal = document.getElementById('myStreamsModal');
+            const content = document.getElementById('myStreamsContent');
+            if (!modal || !content) return;
+
+            modal.style.display = 'flex';
+            content.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">⏳ جاري التحميل...</div>';
+
+            try {
+                const snap = await db.collection('liveStreams').get();
+                const mine = snap.docs.filter(d => d.data().isLive && d.data().adminId === currentAdmin.id);
+
+                if (mine.length === 0) {
+                    content.innerHTML = `
+                        <div style="text-align:center; padding:30px 20px; color:#888;">
+                            <div style="font-size:50px; margin-bottom:12px; opacity:0.5;">📭</div>
+                            <h3 style="color:#666; margin-bottom:8px;">لا يوجد لديك بثوث نشطة</h3>
+                            <p style="font-size:12px;">لما تبدأ بث جديد هيظهر هنا تلقائياً.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                content.innerHTML = mine.map(doc => {
+                    const data = doc.data();
+                    const isCurrentSession = (doc.id === currentBroadcastDocId);
+                    const startedAt = data.startedAt && data.startedAt.toDate ? data.startedAt.toDate() : null;
+                    const startedText = startedAt
+                        ? startedAt.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                        : '—';
+
+                    return `
+                        <div style="background:${isCurrentSession ? '#e6f7e6' : '#f8f9fa'}; border:2px solid ${isCurrentSession ? '#2a7a2a' : '#dee2e6'}; padding:16px; border-radius:16px; margin-bottom:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:start; gap:12px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:200px;">
+                                    <div style="font-weight:900; color:#3b0a0a; font-size:15px; margin-bottom:6px;">📝 ${esc(data.title || 'بدون عنوان')}</div>
+                                    <div style="font-size:12px; color:#555; margin-bottom:4px;">🎓 ${esc(data.grade || '—')}</div>
+                                    <div style="font-size:11px; color:#888;">
+                                        ⏰ بدأ: ${startedText}
+                                        ${isCurrentSession
+                                            ? ' • <strong style="color:#2a7a2a;">🔴 الجلسة الحالية</strong>'
+                                            : ' • <em style="color:#a00;">من جلسة أخرى</em>'}
+                                    </div>
+                                </div>
+                                <button onclick="stopMyStreamFromList('${esc(doc.id)}', ${isCurrentSession})" style="background:linear-gradient(135deg, #c00 0%, #800 100%); color:#fff; border:none; padding:10px 20px; border-radius:50px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 4px 12px rgba(170,0,0,0.3); white-space:nowrap; font-family:'Cairo', sans-serif;">
+                                    ⏹️ إيقاف البث
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                console.error(e);
+                content.innerHTML = '<div style="text-align:center; padding:30px; color:#a00;">❌ حدث خطأ أثناء التحميل: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        function closeMyStreamsModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            const modal = document.getElementById('myStreamsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function stopMyStreamFromList(docId, isCurrentSession) {
+            if (!currentAdmin) return;
+
+            const confirmMsg = isCurrentSession
+                ? `⚠️ هل أنت متأكد من إيقاف بثك الحالي؟\n\nسيتم فصل كل الطلاب المتصلين.`
+                : `⚠️ ده بث من جلسة تانية (أو متبقي في السيرفر).\n\nهل تريد إيقافه؟`;
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const docRef = db.collection('liveStreams').doc(docId);
+
+                const stSnap = await docRef.collection('students').get();
+                if (!stSnap.empty) {
+                    const batch = db.batch();
+                    stSnap.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                }
+
+                await docRef.update({
+                    isLive: false,
+                    stoppedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    stoppedBy: currentAdmin.name + ' (من قائمة بثوثي)'
+                });
+
+                if (isCurrentSession) {
+                    Object.keys(peerConnections).forEach(id => {
+                        try { cleanupPeer(id); } catch(e) {}
+                    });
+
+                    if (studentsUnsubscribe) {
+                        try { studentsUnsubscribe(); } catch(e) {}
+                        studentsUnsubscribe = null;
+                    }
+
+                    if (liveLocalStream) {
+                        liveLocalStream.getTracks().forEach(t => t.stop());
+                        liveLocalStream = null;
+                    }
+
+                    currentBroadcastDocId = null;
+                    isLiveActive = false;
+
+                    document.getElementById('localPreviewContainer').style.display = 'none';
+                    document.getElementById('liveToolbar').style.display = 'none';
+                    document.getElementById('permissionPanel').style.display = 'none';
+                    document.getElementById('studentStreamsContainer').style.display = 'none';
+
+                    const startBtn = document.getElementById('startLiveBtn');
+                    if (startBtn) {
+                        startBtn.style.display = 'inline-block';
+                        startBtn.disabled = false;
+                        startBtn.textContent = '🔴 بدء البث';
+                    }
+                    document.getElementById('stopLiveBtn').style.display = 'none';
+
+                    const switchBtn = document.getElementById('btnSwitchCam');
+                    if (switchBtn) {
+                        switchBtn.style.display = 'none';
+                        switchBtn.innerHTML = '<span>🔄</span> <span>Front 1</span>';
+                    }
+
+                    adminFacingMode = 'user';
+                    adminCurrentCamName = 'Front 1';
+                    adminCamerasCache = [];
+                }
+
+                alert('✅ تم إيقاف البث بنجاح.');
+
+                refreshMyStreamsCount();
+                showMyStreamsModal();
+                loadLiveStreamStatus();
+                loadStudentsTable();
+
+            } catch(e) {
+                console.error(e);
+                alert('❌ حدث خطأ: ' + e.message);
+            }
+        }
+
+        async function checkMyExistingStream() {
+            if (!currentAdmin) return;
+            try {
+                const snap = await db.collection('liveStreams').get();
+                const myStreams = snap.docs.filter(d =>
+                    d.data().isLive && d.data().adminId === currentAdmin.id
+                );
+
+                if (myStreams.length === 0) return;
+
+                const count = myStreams.length;
+                const choice = confirm(
+                    `⚠️ لديك ${count} بث نشط من جلسة سابقة:\n\n` +
+                    `هل تريد إيقافها كلها الآن؟\n` +
+                    `(اضغط Cancel لو عايز تسيبها — بس الكاميرا مش هتشتغل تلقائياً)`
+                );
+
+                if (choice) {
+                    for (const stream of myStreams) {
+                        const stSnap = await stream.ref.collection('students').get();
+                        if (!stSnap.empty) {
+                            const batch = db.batch();
+                            stSnap.forEach(d => batch.delete(d.ref));
+                            await batch.commit();
+                        }
+                        await stream.ref.update({
+                            isLive: false,
+                            stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    alert('✅ تم إيقاف كل البثوث القديمة.');
+                    loadLiveStreamStatus();
+                    refreshMyStreamsCount();
+                }
+            } catch(e) { console.warn('checkMyExistingStream:', e); }
+        }
+
+        function initAdminPanel() {
+            loadDarkModePreference();
+            initGrades();
+            loadStudentsTable();
+            loadBundlesTable();
+            loadCoursesTable();
+            loadBooksTable();
+            loadTeachersTable();
+            loadExamsTable();
+            populateBundleSelects();
+            setupForms();
+            toggleItemFields();
+            loadLiveStreamStatus();
+
+            const sourceSelect = document.getElementById('liveSource');
+            if (sourceSelect) {
+                const screenOpt = sourceSelect.querySelector('option[value="screen"]');
+                const supportsDisplay = navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function';
+                if (screenOpt && !supportsDisplay) {
+                    screenOpt.disabled = true;
+                    screenOpt.textContent = '🖥️ مشاركة الشاشة (غير مدعومة على هذا الجهاز)';
+                }
+            }
+
+            loadAdminCamerasList();
+
+            setTimeout(() => checkMyExistingStream(), 500);
+
+            refreshMyStreamsCount();
+            setInterval(refreshMyStreamsCount, 5000);
+
+            // 🎯 تصحيح تلقائي للمحاولات المعلقة
+            gradePendingAttempts();
+            setInterval(gradePendingAttempts, 30000);  // كل 30 ثانية
+        }
+    </script>
+</body>
+</html>
