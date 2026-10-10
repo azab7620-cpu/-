@@ -7,12 +7,12 @@
 
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com;
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.recaptcha.net;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: https: blob:;
-      frame-src https://www.youtube.com https://drive.google.com https://*.google.com;
-      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com;
+      frame-src https://www.youtube.com https://drive.google.com https://*.google.com https://www.recaptcha.net;
+      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net;
       media-src 'self' blob: mediastream:;
       object-src 'none';
       base-uri 'self';
@@ -23,6 +23,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background: #f8f6f2; color: #333; overflow-x: hidden; transition: background 0.3s, color 0.3s; font-size: 14px; }
@@ -993,23 +994,34 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        //  🔥 Firebase (بدون Storage)
+        //  🔥 Firebase + App Check
         // ═══════════════════════════════════════════════════════════
         const firebaseConfig = {
-            apiKey: "AIzaSyBwvx9SmuHlot0ZyTzjKJL4XsEen4mi_3Y",
-            authDomain: "test-f5cb9.firebaseapp.com",
-            projectId: "test-f5cb9",
-            storageBucket: "test-f5cb9.firebasestorage.app",
-            messagingSenderId: "285536957191",
-            appId: "1:285536957191:web:8b1cd99ead5aabdd524ba2"
+            apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
+            authDomain: "test1-d8ecb.firebaseapp.com",
+            projectId: "test1-d8ecb",
+            storageBucket: "test1-d8ecb.firebasestorage.app",
+            messagingSenderId: "1059423288453",
+            appId: "1:1059423288453:web:b6f1d02b1b530c5bfb3dec"
         };
         firebase.initializeApp(firebaseConfig);
+
+        // 🛡️ تفعيل App Check (reCAPTCHA Enterprise - بدون إزعاج للمستخدم)
+        try {
+            const appCheck = firebase.appCheck();
+            appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
+            console.log('✅ App Check initialized');
+        } catch (e) {
+            console.warn('⚠️ App Check error:', e);
+        }
+
         const db = firebase.firestore();
         const auth = firebase.auth();
 
         let currentAdmin = null;
         let currentBroadcastDocId = null;
 
+        // ✅ الأدمن يقدر يقرأ كل الـ collections حسب القواعد
         async function getCollection(name) {
             const snap = await db.collection(name).get();
             return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1379,7 +1391,7 @@
                 }
             });
 
-            // 3) إضافة محاضرة (رابط فقط)
+            // 3) إضافة محاضرة
             document.getElementById('addCourseForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const title = document.getElementById('courseTitle').value.trim();
@@ -1402,7 +1414,7 @@
                 }
             });
 
-            // 4) إضافة كتاب (رابط فقط)
+            // 4) إضافة كتاب
             document.getElementById('addBookForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const title = document.getElementById('bookTitle').value.trim();
@@ -1425,7 +1437,7 @@
                 }
             });
 
-            // 5) إضافة مدرس (صورة Base64 أو رابط)
+            // 5) إضافة مدرس
             document.getElementById('addTeacherForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const name = document.getElementById('teacherName').value.trim();
@@ -1507,9 +1519,6 @@
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  🔒 saveFullExam — النسخة الآمنة (تفصل الإجابات)
-        // ═══════════════════════════════════════════════════════════
         async function saveFullExam() {
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
@@ -1518,8 +1527,8 @@
             if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
 
-            const questionsPublic = [];  // بدون الإجابات
-            const answersPrivate  = [];  // الإجابات فقط
+            const questionsPublic = [];
+            const answersPrivate  = [];
 
             for (let i = 0; i < boxes.length; i++) {
                 const box = boxes[i];
@@ -1532,16 +1541,13 @@
             }
 
             try {
-                // ═══ 🔒 فصل الإجابات عن الأسئلة ═══
-                const newDocRef = db.collection('exams').doc();  // معرّف جديد
+                const newDocRef = db.collection('exams').doc();
 
-                // 1) حفظ الأسئلة بدون إجابات (يقرأها الطالب)
                 await newDocRef.set({
                     title, grade, oneTimeOnly,
                     questions: questionsPublic
                 });
 
-                // 2) الإجابات في subcollection محمي (_private) — الأدمن فقط
                 await newDocRef.collection('_private').doc('key').set({
                     answers: answersPrivate
                 });
@@ -1563,7 +1569,6 @@
 
         // ═══════════════════════════════════════════════════════════
         //  🎯 تصحيح تلقائي للمحاولات المعلقة
-        //  يشتغل تلقائياً كل 30 ثانية
         // ═══════════════════════════════════════════════════════════
         async function gradePendingAttempts() {
             try {
@@ -1580,7 +1585,6 @@
                 for (const attemptDoc of pendingSnap.docs) {
                     const attempt = attemptDoc.data();
 
-                    // نجيب الإجابات من _private
                     const keyDoc = await db.collection('exams')
                         .doc(attempt.examId)
                         .collection('_private').doc('key')
@@ -1688,10 +1692,9 @@
         async function deleteExam(id) {
             if (!confirm('⚠️ حذف هذا الاختبار نهائياً؟')) return;
             try {
-                // حذف الإجابات المحمية أولاً
                 try {
                     await db.collection('exams').doc(id).collection('_private').doc('key').delete();
-                } catch(e) { /* قد لا تكون موجودة لو الاختبار قديم */ }
+                } catch(e) { }
                 await db.collection('exams').doc(id).delete();
                 alert('✅ تم الحذف.');
                 loadExamsTable();
@@ -2343,11 +2346,11 @@
 
         async function loadLiveStreamStatus() {
             try {
-                const snap = await db.collection('liveStreams').get();
+                const snap = await db.collection('liveStreams').where('isLive', '==', true).get();
                 const box = document.getElementById('liveStreamStatusBox');
                 if (!box) return;
 
-                const activeStreams = snap.docs.filter(d => d.data().isLive);
+                const activeStreams = snap.docs;
 
                 if (activeStreams.length === 0) {
                     box.innerHTML = '<div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط حالياً</div>';
@@ -2370,8 +2373,11 @@
         async function refreshMyStreamsCount() {
             if (!currentAdmin) return;
             try {
-                const snap = await db.collection('liveStreams').get();
-                const mine = snap.docs.filter(d => d.data().isLive && d.data().adminId === currentAdmin.id);
+                const snap = await db.collection('liveStreams')
+                    .where('adminId', '==', currentAdmin.id)
+                    .where('isLive', '==', true)
+                    .get();
+                const mine = snap.docs;
                 const badge = document.getElementById('myStreamsCount');
                 if (badge) {
                     badge.textContent = mine.length;
@@ -2391,8 +2397,11 @@
             content.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">⏳ جاري التحميل...</div>';
 
             try {
-                const snap = await db.collection('liveStreams').get();
-                const mine = snap.docs.filter(d => d.data().isLive && d.data().adminId === currentAdmin.id);
+                const snap = await db.collection('liveStreams')
+                    .where('adminId', '==', currentAdmin.id)
+                    .where('isLive', '==', true)
+                    .get();
+                const mine = snap.docs;
 
                 if (mine.length === 0) {
                     content.innerHTML = `
@@ -2529,10 +2538,11 @@
         async function checkMyExistingStream() {
             if (!currentAdmin) return;
             try {
-                const snap = await db.collection('liveStreams').get();
-                const myStreams = snap.docs.filter(d =>
-                    d.data().isLive && d.data().adminId === currentAdmin.id
-                );
+                const snap = await db.collection('liveStreams')
+                    .where('adminId', '==', currentAdmin.id)
+                    .where('isLive', '==', true)
+                    .get();
+                const myStreams = snap.docs;
 
                 if (myStreams.length === 0) return;
 
@@ -2594,9 +2604,8 @@
             refreshMyStreamsCount();
             setInterval(refreshMyStreamsCount, 5000);
 
-            // 🎯 تصحيح تلقائي للمحاولات المعلقة
             gradePendingAttempts();
-            setInterval(gradePendingAttempts, 30000);  // كل 30 ثانية
+            setInterval(gradePendingAttempts, 30000);
         }
     </script>
 </body>
