@@ -7,12 +7,12 @@
 
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com;
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.recaptcha.net;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: https:;
-      frame-src https://www.youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.google.com;
-      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com;
+      frame-src https://www.youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.google.com https://www.recaptcha.net;
+      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net;
       media-src 'self' blob: mediastream:;
       object-src 'none';
       base-uri 'self';
@@ -23,6 +23,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         :root {
@@ -1386,31 +1387,36 @@
         }
 
         // ============================================================
-        //  🔥 Firebase
+        //  🔥 Firebase + App Check
         // ============================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBwvx9SmuHlot0ZyTzjKJL4XsEen4mi_3Y",
-            authDomain: "test-f5cb9.firebaseapp.com",
-            projectId: "test-f5cb9",
-            storageBucket: "test-f5cb9.firebasestorage.app",
-            messagingSenderId: "285536957191",
-            appId: "1:285536957191:web:8b1cd99ead5aabdd524ba2"
+            apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
+            authDomain: "test1-d8ecb.firebaseapp.com",
+            projectId: "test1-d8ecb",
+            storageBucket: "test1-d8ecb.firebasestorage.app",
+            messagingSenderId: "1059423288453",
+            appId: "1:1059423288453:web:b6f1d02b1b530c5bfb3dec"
         };
         firebase.initializeApp(firebaseConfig);
+
+        // 🛡️ تفعيل App Check (reCAPTCHA Enterprise - بدون إزعاج للمستخدم)
+        try {
+            const appCheck = firebase.appCheck();
+            appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
+            console.log('✅ App Check initialized');
+        } catch (e) {
+            console.warn('⚠️ App Check error:', e);
+        }
+
         const db = firebase.firestore();
         const auth = firebase.auth();
 
         let ignoreAuthChange = false;
 
-        async function getCollection(name) {
-            const snap = await db.collection(name).get();
-            return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        async function getTeachersPublic() {
+            const snap = await db.collection('teachers').get();
+            return snap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
-        async function getCourses()  { return await getCollection('courses');  }
-        async function getBooks()    { return await getCollection('books');    }
-        async function getTeachers() { return await getCollection('teachers'); }
-        async function getExams()    { return await getCollection('exams');    }
-        async function getBundles()  { return await getCollection('bundles');  }
 
         function showNavLinks() {
             const navLinks = document.getElementById('navLinks');
@@ -1431,44 +1437,59 @@
         async function renderTeachers() {
             const grid = document.getElementById('teachersGrid');
             if (!grid) return;
-            const teachers = await getTeachers();
-            grid.innerHTML = teachers.length ? teachers.map((t, i) => `
-                <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
-                    <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
-                    <h4>${esc(t.name)}</h4>
-                    <p>${esc(t.specialty || 'مدرس')}</p>
-                    <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
-                </div>
-            `).join('') : '<p>لا يوجد مدرسون.</p>';
+            try {
+                const teachers = await getTeachersPublic();
+                grid.innerHTML = teachers.length ? teachers.map((t, i) => `
+                    <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                        <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
+                        <h4>${esc(t.name)}</h4>
+                        <p>${esc(t.specialty || 'مدرس')}</p>
+                        <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
+                    </div>
+                `).join('') : '<p>لا يوجد مدرسون.</p>';
+            } catch(e) {
+                console.error('renderTeachers:', e);
+                grid.innerHTML = '<p>لا يوجد مدرسون.</p>';
+            }
         }
 
         async function renderCourses() {
             const grid = document.getElementById('coursesGrid');
             if (!grid) return;
-            const allCourses = await getCourses();
-            const homeCourses = allCourses.filter(c => c.showInHome === true);
-            grid.innerHTML = homeCourses.length ? homeCourses.map((c, i) => `
-                <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
-                    <h4>${esc(c.title)}</h4>
-                    <p><strong>الصف:</strong> ${esc(c.grade)}</p>
-                    <a href="${esc(safeUrl(c.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">مشاهدة</a>
-                </div>
-            `).join('') : '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
+            try {
+                const snap = await db.collection('courses').where('showInHome', '==', true).get();
+                const homeCourses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                grid.innerHTML = homeCourses.length ? homeCourses.map((c, i) => `
+                    <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                        <h4>${esc(c.title)}</h4>
+                        <p><strong>الصف:</strong> ${esc(c.grade)}</p>
+                        <a href="${esc(safeUrl(c.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">مشاهدة</a>
+                    </div>
+                `).join('') : '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
+            } catch(e) {
+                console.error('renderCourses:', e);
+                grid.innerHTML = '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
+            }
         }
 
         async function renderBooks() {
             const grid = document.getElementById('booksGrid');
             if (!grid) return;
-            const allBooks = await getBooks();
-            const homeBooks = allBooks.filter(b => b.showInHome === true);
-            grid.innerHTML = homeBooks.length ? homeBooks.map((b, i) => `
-                <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
-                    <div style="font-size:40px; margin-bottom:12px;">📖</div>
-                    <h4>${esc(b.title)}</h4>
-                    <p><strong>الصف:</strong> ${esc(b.grade)}</p>
-                    <a href="${esc(safeUrl(b.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">تحميل</a>
-                </div>
-            `).join('') : '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
+            try {
+                const snap = await db.collection('books').where('showInHome', '==', true).get();
+                const homeBooks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                grid.innerHTML = homeBooks.length ? homeBooks.map((b, i) => `
+                    <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                        <div style="font-size:40px; margin-bottom:12px;">📖</div>
+                        <h4>${esc(b.title)}</h4>
+                        <p><strong>الصف:</strong> ${esc(b.grade)}</p>
+                        <a href="${esc(safeUrl(b.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">تحميل</a>
+                    </div>
+                `).join('') : '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
+            } catch(e) {
+                console.error('renderBooks:', e);
+                grid.innerHTML = '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
+            }
         }
 
         function toggleCenterField() {
@@ -1519,8 +1540,6 @@
         let answers = [];
 
         let examInProgress = false;
-
-        // 🆕 Listener للتحديث الفوري للدرجة
         let currentAttemptUnsub = null;
 
         function calculateBundleProgress(bundle, user) {
@@ -1591,9 +1610,18 @@
             const completed = await fetchCompletedExamIds(user.id);
             currentUser.completedExams = completed;
 
-            const exams = (await getExams()).filter(e => e.grade === user.grade);
+            let exams = [];
+            let bundles = [];
+            try {
+                const examsSnap = await db.collection('exams').where('grade', '==', user.grade).get();
+                exams = examsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
+                bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch(e) {
+                console.error('خطأ في تحميل exams/bundles:', e);
+            }
 
-            const bundles = (await getBundles()).filter(b => b.grade === user.grade);
             const coursesGrid = document.getElementById('studentCoursesGrid');
 
             if (bundles.length) {
@@ -1640,16 +1668,16 @@
                 studentExamsList.innerHTML = '<p style="color:#888;">لا توجد اختبارات لصفك بعد.</p>';
             }
 
-            const teachers = await getTeachers();
+            const teachers = await getTeachersPublic();
             document.getElementById('studentTeachersGrid').innerHTML = teachers.map(t => `
                 <div class="teacher-card">${t.image ? `<img src="${esc(safeUrl(t.image))}" alt="">` : ''}<h5>${esc(t.name)}</h5><p>${esc(t.specialty || '')}</p></div>
             `).join('');
         }
 
         async function openBundle(bundleId) {
-            const bundles = await getBundles();
-            const bundle = bundles.find(b => b.id === bundleId);
-            if (!bundle) return;
+            const bundleSnap = await db.collection('bundles').doc(bundleId).get();
+            if (!bundleSnap.exists) return;
+            const bundle = { id: bundleSnap.id, ...bundleSnap.data() };
 
             const completed = await fetchCompletedExamIds(currentUser.id);
             currentUser.completedExams = completed;
@@ -2312,9 +2340,10 @@
                 const completed = await fetchCompletedExamIds(currentUser.id);
                 currentUser.completedExams = completed;
 
-                const exams = await getExams();
-                const ex = exams.find(e => e.id === examId);
-                if (!ex) { examInProgress = false; return; }
+                const examSnap = await db.collection('exams').doc(examId).get();
+                if (!examSnap.exists) { examInProgress = false; return; }
+                const ex = { id: examSnap.id, ...examSnap.data() };
+
                 if (ex.oneTimeOnly && completed.includes(examId)) {
                     alert('🔒 لقد قمت بتسليم هذا الاختبار مسبقاً، لا يمكن إعادته.');
                     examInProgress = false;
@@ -2405,31 +2434,23 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  🔒 finishExam — النسخة الآمنة الجديدة
-        //  ✅ مفيش تصحيح محلي (الطالب مايشوفش الإجابات)
-        //  ✅ الإجابات تُرسل للأدمن للتصحيح
-        //  ✅ Real-time listener للدرجة
-        // ═══════════════════════════════════════════════════════════
         async function finishExam() {
             if (!examInProgress) return;
 
-            // إلغاء الـ listener القديم لو موجود
             if (currentAttemptUnsub) {
                 try { currentAttemptUnsub(); } catch(e) {}
                 currentAttemptUnsub = null;
             }
 
             try {
-                // ═══ 🔒 إرسال الإجابات بدون تصحيح محلي ═══
                 const attemptRef = await db.collection('examAttempts').add({
                     studentId: currentUser.id,
                     examId: currentExam.id,
                     examTitle: currentExam.title,
                     grade: currentUser.grade,
-                    studentAnswers: answers,          // ← الإجابات اللي اختارها الطالب
+                    studentAnswers: answers,
                     answersCount: currentExam.questions.length,
-                    pending: true,                    // ← في انتظار التصحيح
+                    pending: true,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -2440,7 +2461,6 @@
                     ];
                 }
 
-                // ═══ عرض شاشة "قيد التصحيح" ═══
                 document.getElementById('questionNav').style.display = 'none';
                 document.getElementById('qTextDisplay').style.display = 'none';
                 document.getElementById('optionsList').style.display = 'none';
@@ -2463,7 +2483,6 @@
                     </p>
                 `;
 
-                // ═══ 🆕 Real-time listener لاستقبال الدرجة ═══
                 currentAttemptUnsub = attemptRef.onSnapshot(snap => {
                     if (!snap.exists) return;
                     const data = snap.data();
@@ -2498,7 +2517,6 @@
         }
 
         function exitExam() {
-            // إلغاء listener الدرجة الحالي
             if (currentAttemptUnsub) {
                 try { currentAttemptUnsub(); } catch(e) {}
                 currentAttemptUnsub = null;
@@ -2595,12 +2613,17 @@
                     document.getElementById('registerForm').reset();
                 } catch (err) {
                     ignoreAuthChange = false;
+                    console.error('❌ Registration error:', err.code, err.message);
+
                     if (err.code === 'auth/email-already-in-use')        alert('البريد الإلكتروني مستخدم بالفعل.');
                     else if (err.code === 'auth/invalid-email')          alert('البريد الإلكتروني غير صحيح.');
                     else if (err.code === 'auth/weak-password')          alert('كلمة المرور ضعيفة جداً.');
                     else if (err.code === 'auth/too-many-requests')      alert('محاولات كثيرة، حاول لاحقاً.');
                     else if (err.code === 'auth/network-request-failed') alert('تعذّر الاتصال، تحقق من الإنترنت.');
-                    else                                                  alert('حدث خطأ، حاول مرة أخرى.');
+                    else if (err.code === 'auth/operation-not-allowed')  alert('❌ تسجيل Email/Password غير مفعّل في Firebase.');
+                    else if (err.code === 'permission-denied' || (err.message && err.message.toLowerCase().includes('permission')))
+                        alert('❌ صلاحيات Firestore تمنع الحفظ.');
+                    else                                                  alert('حدث خطأ: ' + (err.code || err.message || 'غير معروف'));
                 } finally {
                     btn.disabled = false;
                     btn.textContent = 'إنشاء الحساب ←';
