@@ -23,7 +23,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         :root {
@@ -302,7 +301,7 @@
                 linear-gradient(to bottom,
                     rgba(190, 150, 90, 0.15),
                     rgba(70, 50, 25, 0.35)),
-                url('https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=2000&q=80')
+                url('https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1200&q=60')
                 center/cover no-repeat;
             background-attachment: fixed;
             color: #fff;
@@ -1392,7 +1391,7 @@
         }
 
         // ============================================================
-        //  🔥 Firebase
+        //  🔥 Firebase (App Check معطّل مؤقتاً لتسريع التحميل)
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
@@ -1403,16 +1402,6 @@
             appId: "1:1059423288453:web:b6f1d02b1b530c5bfb3dec"
         };
         firebase.initializeApp(firebaseConfig);
-
-        // ⏸️ App Check معطّل مؤقتاً لتسريع التحميل
-        // (يمكن تفعيله لاحقاً لو احتجت الحماية الإضافية)
-        // try {
-        //     const appCheck = firebase.appCheck();
-        //     appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
-        //     console.log('✅ App Check initialized');
-        // } catch (e) {
-        //     console.warn('⚠️ App Check error:', e);
-        // }
 
         const db = firebase.firestore();
         const auth = firebase.auth();
@@ -1467,11 +1456,31 @@
             }, 100);
         }
 
+        // ✅ renderTeachers مع Cache
         async function renderTeachers() {
             const grid = document.getElementById('teachersGrid');
             if (!grid) return;
+
+            const cached = localStorage.getItem('cache_teachers');
+            if (cached) {
+                try {
+                    const teachers = JSON.parse(cached);
+                    if (teachers.length) {
+                        grid.innerHTML = teachers.map((t, i) => `
+                            <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                                <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
+                                <h4>${esc(t.name)}</h4>
+                                <p>${esc(t.specialty || 'مدرس')}</p>
+                                <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
+                            </div>
+                        `).join('');
+                    }
+                } catch(e) {}
+            }
+
             try {
                 const teachers = await getTeachersPublic();
+                localStorage.setItem('cache_teachers', JSON.stringify(teachers));
                 grid.innerHTML = teachers.length ? teachers.map((t, i) => `
                     <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
                         <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
@@ -1482,16 +1491,35 @@
                 `).join('') : '<p>لا يوجد مدرسون.</p>';
             } catch(e) {
                 console.error('renderTeachers:', e);
-                grid.innerHTML = '<p>لا يوجد مدرسون.</p>';
+                if (!cached) grid.innerHTML = '<p>لا يوجد مدرسون.</p>';
             }
         }
 
+        // ✅ renderCourses مع Cache
         async function renderCourses() {
             const grid = document.getElementById('coursesGrid');
             if (!grid) return;
+
+            const cached = localStorage.getItem('cache_courses');
+            if (cached) {
+                try {
+                    const homeCourses = JSON.parse(cached);
+                    if (homeCourses.length) {
+                        grid.innerHTML = homeCourses.map((c, i) => `
+                            <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                                <h4>${esc(c.title)}</h4>
+                                <p><strong>الصف:</strong> ${esc(c.grade)}</p>
+                                <a href="${esc(safeUrl(c.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">مشاهدة</a>
+                            </div>
+                        `).join('');
+                    }
+                } catch(e) {}
+            }
+
             try {
                 const snap = await db.collection('courses').where('showInHome', '==', true).get();
                 const homeCourses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                localStorage.setItem('cache_courses', JSON.stringify(homeCourses));
                 grid.innerHTML = homeCourses.length ? homeCourses.map((c, i) => `
                     <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
                         <h4>${esc(c.title)}</h4>
@@ -1501,16 +1529,36 @@
                 `).join('') : '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
             } catch(e) {
                 console.error('renderCourses:', e);
-                grid.innerHTML = '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
+                if (!cached) grid.innerHTML = '<p style="color:#888;">لا توجد محاضرات عامة حالياً.</p>';
             }
         }
 
+        // ✅ renderBooks مع Cache
         async function renderBooks() {
             const grid = document.getElementById('booksGrid');
             if (!grid) return;
+
+            const cached = localStorage.getItem('cache_books');
+            if (cached) {
+                try {
+                    const homeBooks = JSON.parse(cached);
+                    if (homeBooks.length) {
+                        grid.innerHTML = homeBooks.map((b, i) => `
+                            <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
+                                <div style="font-size:40px; margin-bottom:12px;">📖</div>
+                                <h4>${esc(b.title)}</h4>
+                                <p><strong>الصف:</strong> ${esc(b.grade)}</p>
+                                <a href="${esc(safeUrl(b.link))}" target="_blank" rel="noopener noreferrer" class="btn-card">تحميل</a>
+                            </div>
+                        `).join('');
+                    }
+                } catch(e) {}
+            }
+
             try {
                 const snap = await db.collection('books').where('showInHome', '==', true).get();
                 const homeBooks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                localStorage.setItem('cache_books', JSON.stringify(homeBooks));
                 grid.innerHTML = homeBooks.length ? homeBooks.map((b, i) => `
                     <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
                         <div style="font-size:40px; margin-bottom:12px;">📖</div>
@@ -1521,7 +1569,7 @@
                 `).join('') : '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
             } catch(e) {
                 console.error('renderBooks:', e);
-                grid.innerHTML = '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
+                if (!cached) grid.innerHTML = '<p style="color:#888;">لا توجد كتب عامة حالياً.</p>';
             }
         }
 
