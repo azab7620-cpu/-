@@ -23,7 +23,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background: #f8f6f2; color: #333; overflow-x: hidden; transition: background 0.3s, color 0.3s; font-size: 14px; }
@@ -183,39 +182,6 @@
             border-color: #d4af37;
             box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
         }
-
-        .upload-progress {
-            display: none;
-            margin-top: 10px;
-            padding: 12px 16px;
-            background: #fffdf5;
-            border: 2px solid #d4af37;
-            border-radius: 12px;
-        }
-        .upload-progress.active { display: block; }
-        .upload-progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #f0ede8;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-        .upload-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #c9a961, #8a6f1d);
-            border-radius: 20px;
-            width: 0%;
-            transition: width 0.2s ease;
-        }
-        .upload-progress-text {
-            font-size: 12px;
-            font-weight: 700;
-            color: #3b0a0a;
-            text-align: center;
-        }
-        body.dark-mode .upload-progress { background: var(--bg-card); color: var(--text-primary); }
-        body.dark-mode .upload-progress-text { color: var(--gold); }
 
         .image-preview-box {
             display: none;
@@ -544,7 +510,6 @@
             <button onclick="showTab('books')">📚 الكتب</button>
             <button onclick="showTab('teachers')">👨‍🏫 المدرسون</button>
             <button onclick="showTab('exams')">📝 الاختبارات</button>
-            <button onclick="showTab('grading')">🎯 تصحيح الاختبارات</button>
             <button onclick="showTab('liveStream')">🔴 البث المباشر</button>
             <button onclick="showTab('addCourse')">➕ إضافة محاضرة</button>
             <button onclick="showTab('addBook')">➕ إضافة كتاب</button>
@@ -611,26 +576,12 @@
 
         <div id="tabExams" class="tab-content">
             <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 قائمة الاختبارات</h4>
-            <div class="alert alert-info">🛠️ يمكنك تصحيح الاختبارات يدوياً من تاب "🎯 تصحيح الاختبارات"، أو حذف الاختبار مع كل محاولات الطلاب المرتبطة به.</div>
+            <div class="alert alert-info">🤖 <strong>التصحيح تلقائي:</strong> بمجرد أن يسلّم الطالب الاختبار، يقوم النظام (عبر Supabase) بتصحيحه خلال ثوانٍ تلقائياً. لا حاجة لتصحيح يدوي.</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table">
                     <thead><tr><th>#</th><th>العنوان</th><th>الصف</th><th>عدد الأسئلة</th><th>النوع</th><th>إجراءات</th></tr></thead>
                     <tbody id="examsTableBody"></tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- 🎯 تصحيح الاختبارات -->
-        <div id="tabGrading" class="tab-content">
-            <h4 style="color:#3b0a0a; margin-bottom:15px;">🎯 تصحيح الاختبارات المعلّقة</h4>
-            <div class="alert alert-info">💡 المحاولات المعلّقة من الطلاب هتظهر هنا. اضغط "صحّح الكل" عشان تصححها كلها مرة واحدة.</div>
-            <div style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                <button onclick="loadPendingAttempts()" class="btn-card" style="background:#1e5a8a; color:#fff; padding:12px 20px;">🔄 تحديث القائمة</button>
-                <button onclick="gradeAllPending()" class="btn-card btn-success" style="padding:12px 20px;">✅ صحّح الكل</button>
-                <span id="pendingCountBadge" style="font-weight:700; color:#3b0a0a; font-size:13px; align-self:center;"></span>
-            </div>
-            <div id="pendingAttemptsList">
-                <p style="text-align:center; color:#888; padding:30px;">اضغط "تحديث القائمة" لعرض المحاولات المعلّقة</p>
             </div>
         </div>
 
@@ -865,7 +816,7 @@
             <div class="add-form">
                 <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 إضافة اختبار جديد</h4>
                 <div class="alert alert-success">💡 الاختبار لا يظهر في الصفحة الرئيسية، بل يظهر للطلاب "المفعلين" فقط.</div>
-                <div class="alert alert-warning">🔒 <strong>ملاحظة أمنية:</strong> الإجابات الصحيحة تُحفظ في مخزن محمي لا يستطيع الطلاب قراءته. التصحيح يتم تلقائياً عبر Supabase، أو يدوياً من تاب "🎯 تصحيح الاختبارات".</div>
+                <div class="alert alert-warning">🔒 <strong>ملاحظة أمنية:</strong> الإجابات الصحيحة تُحفظ في مخزن محمي لا يستطيع الطلاب قراءته. التصحيح يتم تلقائياً عبر Supabase.</div>
                 <form id="examSetupForm">
                     <div class="form-grid">
                         <div><label>عنوان الاختبار</label><input type="text" id="examTitle" required></div>
@@ -942,9 +893,6 @@
             return 'b_' + safeAdminId + '_' + safeGrade;
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  🖼️ ضغط الصور + تحويلها لـ Base64
-        // ═══════════════════════════════════════════════════════════
         async function imageToBase64Compressed(file, maxWidth = 400, quality = 0.8) {
             return new Promise((resolve, reject) => {
                 if (!file.type.startsWith('image/')) {
@@ -1009,9 +957,9 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  🔥 Firebase + App Check
-        // ═══════════════════════════════════════════════════════════
+        // ============================================================
+        //  🔥 Firebase
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
             authDomain: "test1-d8ecb.firebaseapp.com",
@@ -1021,14 +969,6 @@
             appId: "1:1059423288453:web:b6f1d02b1b530c5bfb3dec"
         };
         firebase.initializeApp(firebaseConfig);
-
-        try {
-            const appCheck = firebase.appCheck();
-            appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
-            console.log('✅ App Check initialized');
-        } catch (e) {
-            console.warn('⚠️ App Check error:', e);
-        }
 
         const db = firebase.firestore();
         const auth = firebase.auth();
@@ -1577,167 +1517,6 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        //  🎯 تصحيح الاختبارات من لوحة الأدمن
-        // ═══════════════════════════════════════════════════════════
-        async function loadPendingAttempts() {
-            const container = document.getElementById('pendingAttemptsList');
-            const badge = document.getElementById('pendingCountBadge');
-            container.innerHTML = '<p style="text-align:center; color:#888; padding:30px;">⏳ جاري التحميل...</p>';
-            badge.textContent = '';
-
-            try {
-                const snap = await db.collection('examAttempts')
-                    .where('pending', '==', true)
-                    .get();
-
-                if (snap.empty) {
-                    container.innerHTML = '<div class="alert alert-success">🎉 لا توجد محاولات معلّقة حالياً!</div>';
-                    badge.textContent = '';
-                    return;
-                }
-
-                const attempts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                badge.textContent = `📊 عدد المحاولات المعلّقة: ${attempts.length}`;
-
-                const studentIds = [...new Set(attempts.map(a => a.studentId))];
-                const studentNames = {};
-                for (const sid of studentIds) {
-                    try {
-                        const s = await db.collection('users').doc(sid).get();
-                        if (s.exists) studentNames[sid] = s.data().name || 'طالب';
-                    } catch(e) { studentNames[sid] = 'طالب'; }
-                }
-
-                container.innerHTML = `
-                    <div style="overflow-x:auto;">
-                        <table class="admin-table">
-                            <thead><tr>
-                                <th>#</th>
-                                <th>الطالب</th>
-                                <th>الاختبار</th>
-                                <th>عدد الأسئلة</th>
-                                <th>إجراء</th>
-                            </tr></thead>
-                            <tbody>
-                                ${attempts.map((a, i) => `
-                                    <tr>
-                                        <td>${i+1}</td>
-                                        <td>${esc(studentNames[a.studentId] || 'طالب')}</td>
-                                        <td>${esc(a.examTitle || 'اختبار')}</td>
-                                        <td>${a.answersCount || 0}</td>
-                                        <td>
-                                            <button onclick="gradeSingleAttempt('${esc(a.id)}', this)" class="btn-card btn-success" style="font-size:12px; padding:8px 16px;">✅ صحّح</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = '<div class="alert alert-warning">❌ حدث خطأ أثناء التحميل: ' + esc(err.message) + '</div>';
-            }
-        }
-
-        async function gradeSingleAttempt(attemptId, btnEl) {
-            if (btnEl) {
-                btnEl.disabled = true;
-                btnEl.textContent = '⏳ جاري...';
-            }
-
-            const attemptRef = db.collection('examAttempts').doc(attemptId);
-            const attemptSnap = await attemptRef.get();
-            if (!attemptSnap.exists) {
-                if (btnEl) { btnEl.disabled = false; btnEl.textContent = '✅ صحّح'; }
-                return false;
-            }
-            const attempt = attemptSnap.data();
-
-            if (attempt.pending !== true) {
-                if (btnEl) { btnEl.disabled = false; btnEl.textContent = '✅ صحّح'; }
-                return true;
-            }
-
-            const keySnap = await db.collection('exams').doc(attempt.examId)
-                .collection('_private').doc('key').get();
-
-            if (!keySnap.exists) {
-                alert('⚠️ الإجابات الصح للاختبار ده مش موجودة');
-                if (btnEl) { btnEl.disabled = false; btnEl.textContent = '✅ صحّح'; }
-                return false;
-            }
-
-            const correctAnswers = keySnap.data().answers || [];
-            const studentAnswers = attempt.studentAnswers || [];
-            const total = correctAnswers.length;
-
-            let correct = 0, wrong = 0, unanswered = 0;
-            for (let i = 0; i < total; i++) {
-                const s = studentAnswers[i];
-                const c = correctAnswers[i];
-                if (s === null || s === undefined || s === -1) unanswered++;
-                else if (Number(s) === Number(c)) correct++;
-                else wrong++;
-            }
-            const score = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-            await attemptRef.update({
-                score, correctCount: correct, wrongCount: wrong, unanswered,
-                totalQuestions: total, pending: false,
-                gradedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                gradedBy: currentAdmin ? currentAdmin.name : 'أدمن'
-            });
-
-            try {
-                const examSnap = await db.collection('exams').doc(attempt.examId).get();
-                if (examSnap.exists && examSnap.data().oneTimeOnly === true) {
-                    await db.collection('users').doc(attempt.studentId)
-                        .collection('completedExams').doc(attempt.examId)
-                        .set({
-                            examId: attempt.examId,
-                            score,
-                            completedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                }
-            } catch(e) { console.warn('completedExams error:', e); }
-
-            if (btnEl) {
-                btnEl.textContent = '✅ تم';
-                btnEl.classList.add('btn-success');
-            }
-            return true;
-        }
-
-        async function gradeAllPending() {
-            if (!confirm('⚠️ هل تريد تصحيح كل المحاولات المعلّقة؟')) return;
-
-            const snap = await db.collection('examAttempts')
-                .where('pending', '==', true)
-                .get();
-
-            if (snap.empty) {
-                alert('✅ لا توجد محاولات معلّقة');
-                return;
-            }
-
-            let success = 0, failed = 0;
-            for (const doc of snap.docs) {
-                try {
-                    const ok = await gradeSingleAttempt(doc.id, null);
-                    if (ok) success++;
-                    else failed++;
-                } catch (e) {
-                    console.error('Grading error for', doc.id, e);
-                    failed++;
-                }
-            }
-
-            alert(`✅ تم التصحيح:\nنجح: ${success}\nفشل: ${failed}`);
-            loadPendingAttempts();
-        }
-
-        // ═══════════════════════════════════════════════════════════
         //  📋 الجداول
         // ═══════════════════════════════════════════════════════════
         async function loadCoursesTable() {
@@ -1803,14 +1582,12 @@
             if (!confirm(`⚠️ هل أنت متأكد من حذف الاختبار "${examTitle}"؟\n\nسيتم حذف كل محاولات الطلاب المرتبطة به أيضاً.`)) return;
 
             try {
-                // 1) اجلب كل محاولات الطلاب المرتبطة بالاختبار
                 const attemptsSnap = await db.collection('examAttempts')
                     .where('examId', '==', examId)
                     .get();
 
                 let deletedCount = 0;
                 if (!attemptsSnap.empty) {
-                    // احذف على دفعات من 400 (حد Firestore 500)
                     let batch = db.batch();
                     let inBatch = 0;
 
@@ -1829,10 +1606,8 @@
                     if (inBatch > 0) await batch.commit();
                 }
 
-                // 2) احذف الاختبار نفسه
                 await db.collection('exams').doc(examId).delete();
 
-                // 3) حدّث الواجهة
                 alert(`✅ تم حذف الاختبار و ${deletedCount} محاولة طالب مرتبطة به.`);
                 loadExamsTable();
                 populateBundleSelects();
@@ -1859,7 +1634,6 @@
             if (tabId === 'books') loadBooksTable();
             if (tabId === 'teachers') loadTeachersTable();
             if (tabId === 'exams') loadExamsTable();
-            if (tabId === 'grading') loadPendingAttempts();
             if (tabId === 'addBundle') populateBundleSelects();
             if (tabId === 'liveStream') {
                 loadLiveStreamStatus();
