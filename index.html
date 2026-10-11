@@ -1392,7 +1392,7 @@
         }
 
         // ============================================================
-        //  🔥 Firebase + App Check
+        //  🔥 Firebase
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
@@ -1404,13 +1404,15 @@
         };
         firebase.initializeApp(firebaseConfig);
 
-        try {
-            const appCheck = firebase.appCheck();
-            appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
-            console.log('✅ App Check initialized');
-        } catch (e) {
-            console.warn('⚠️ App Check error:', e);
-        }
+        // ⏸️ App Check معطّل مؤقتاً لتسريع التحميل
+        // (يمكن تفعيله لاحقاً لو احتجت الحماية الإضافية)
+        // try {
+        //     const appCheck = firebase.appCheck();
+        //     appCheck.activate('6Lf8U-ctAAAAAFQf_e6F0Wgq9_Kza9tHPDjlbikz', true);
+        //     console.log('✅ App Check initialized');
+        // } catch (e) {
+        //     console.warn('⚠️ App Check error:', e);
+        // }
 
         const db = firebase.firestore();
         const auth = firebase.auth();
@@ -1423,6 +1425,7 @@
 
         async function callSupabaseGrading(attemptId) {
             try {
+                console.log('🚀 Calling Supabase with attemptId:', attemptId);
                 const res = await fetch(SUPABASE_FUNCTION_URL, {
                     method: 'POST',
                     headers: {
@@ -1591,7 +1594,6 @@
             document.querySelectorAll('.dashboard-tabs button').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
-            // 📊 لو فتح تاب الدرجات، حمّلها
             if (tabName === 'grades' && currentUser) {
                 loadStudentGrades(currentUser.id);
             }
@@ -1629,9 +1631,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        //  📊 قائمة الدرجات والنتائج
-        // ═══════════════════════════════════════════════════════════════
         async function loadStudentGrades(userId) {
             const container = document.getElementById('gradesList');
             if (!container) return;
@@ -1701,9 +1700,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        //  👁️ عرض تفاصيل نتيجة محاولة معينة
-        // ═══════════════════════════════════════════════════════════════
         async function showAttemptResult(attemptId) {
             const resultDiv = document.getElementById('attempt-result-' + attemptId);
             if (!resultDiv) return;
@@ -1789,8 +1785,6 @@
             document.getElementById('studentGradeDash').textContent = user.grade || '';
 
             const a = await fetchStudentAttempts(user.id);
-            // ملحوظة: تم إزالة عرض الكروت الملخصة من هذا المكان
-            // لأن درجاتي الآن في تاب منفصل
 
             const completed = await fetchCompletedExamIds(user.id);
             currentUser.completedExams = completed;
