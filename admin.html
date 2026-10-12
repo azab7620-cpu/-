@@ -68,7 +68,7 @@
         body.dark-mode .admin-table td { border-bottom-color: var(--border-color); color: var(--text-primary); }
         body.dark-mode .btn-card, body.dark-mode .btn-submit { background: var(--gold); color: #1a1a2e; }
         body.dark-mode .add-form label { color: var(--text-secondary); }
-        body.dark-mode .add-form input, body.dark-mode .add-form select { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); }
+        body.dark-mode .add-form input, body.dark-mode .add-form select, body.dark-mode .add-form textarea { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); }
         body.dark-mode .question-box-generator { background: var(--bg-card); border-color: var(--border-color); }
         body.dark-mode h2, body.dark-mode h4, body.dark-mode h5 { color: var(--gold); }
         body.dark-mode .modal-content { background: var(--bg-card); color: var(--text-primary); }
@@ -190,7 +190,7 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .full-width { grid-column: 1 / -1; }
         .add-form label { display: block; font-weight: 700; font-size: 13px; color: #3b0a0a; margin-bottom: 5px; }
-        .add-form input, .add-form select {
+        .add-form input, .add-form select, .add-form textarea {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #eadacc;
@@ -200,8 +200,9 @@
             outline: none;
             transition: 0.3s;
             background: #fff;
+            resize: vertical;
         }
-        .add-form input:focus, .add-form select:focus {
+        .add-form input:focus, .add-form select:focus, .add-form textarea:focus {
             border-color: #d4af37;
             box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
         }
@@ -599,7 +600,7 @@
 
         <div id="tabExams" class="tab-content">
             <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 قائمة الاختبارات</h4>
-            <div class="alert alert-info">🤖 <strong>التصحيح تلقائي:</strong> بمجرد أن يسلّم الطالب الاختبار، يقوم النظام (عبر Supabase) بتصحيحه خلال ثوانٍ تلقائياً. لا حاجة لتصحيح يدوي.</div>
+            <div class="alert alert-info">🤖 <strong>التصحيح تلقائي:</strong> بمجرد أن يسلّم الطالب الاختبار، يقوم النظام بتصحيحه خلال ثوانٍ تلقائياً.</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table">
                     <thead><tr><th>#</th><th>العنوان</th><th>الصف</th><th>عدد الأسئلة</th><th>النوع</th><th>إجراءات</th></tr></thead>
@@ -839,12 +840,22 @@
             <div class="add-form">
                 <h4 style="color:#3b0a0a; margin-bottom:15px;">📝 إضافة اختبار جديد</h4>
                 <div class="alert alert-success">💡 الاختبار لا يظهر في الصفحة الرئيسية، بل يظهر للطلاب "المفعلين" فقط.</div>
-                <div class="alert alert-warning">🔒 <strong>ملاحظة أمنية:</strong> الإجابات الصحيحة تُحفظ في مخزن محمي لا يستطيع الطلاب قراءته. التصحيح يتم تلقائياً عبر Supabase.</div>
                 <form id="examSetupForm">
                     <div class="form-grid">
                         <div><label>عنوان الاختبار</label><input type="text" id="examTitle" required></div>
                         <div><label>الصف الدراسي</label><select id="examGrade" required><option value="">اختر الصف</option></select></div>
+                        <div>
+                            <label>🔤 نوع الأسئلة</label>
+                            <select id="examQuestionType">
+                                <option value="mcq">اختيار من متعدد (4 خيارات)</option>
+                                <option value="truefalse">صح / غلط</option>
+                            </select>
+                        </div>
                         <div><label>عدد الأسئلة</label><input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5"></div>
+                        <div class="full-width">
+                            <label>📝 ملاحظة (اختياري)</label>
+                            <textarea id="examNote" rows="3" placeholder="مثال: الاختبار يشمل الفصل الأول والثاني" style="width:100%; padding:12px 16px; border:2px solid #eadacc; border-radius:14px; font-size:13px; font-family:'Cairo', sans-serif; outline:none; resize:vertical;"></textarea>
+                        </div>
                         <div class="full-width">
                             <label class="exam-one-time-box">
                                 <input type="checkbox" id="examOneTimeOnly">
@@ -993,11 +1004,8 @@
         };
         firebase.initializeApp(firebaseConfig);
 
-        // 🆕 تشغيل App Check بـ reCAPTCHA v3
-        // الـ Site Key من Firebase Console → App Check → reCAPTCHA v3
         try {
             const appCheck = firebase.appCheck();
-            // الوسيط الثاني = true يعني reCAPTCHA v3 (بدون تحدي مرئي)
             appCheck.activate('6LdFfxestAAAAAB3W4cnUYQbVMe1ribUigtWSq_0K', true);
             console.log('✅ App Check (reCAPTCHA v3) مُفعّل - Admin Panel');
         } catch (e) {
@@ -1468,33 +1476,54 @@
             const count = parseInt(document.getElementById('examQuestionCount').value);
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
+            const qType = document.getElementById('examQuestionType').value;
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
             if (!count || count < 1 || count > 50) { alert('أدخل عدد 1-50'); return; }
 
             let html = '<h4 style="color:#3b0a0a; margin:18px 0; border-top:1px dashed #ddd; padding-top:18px;">الأسئلة:</h4>';
+
             for (let i = 0; i < count; i++) {
-                html += `
-                    <div class="question-box-generator">
-                        <h4 style="font-size:15px;">السؤال ${i + 1}</h4>
-                        <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                            <input type="text" class="opt-input" placeholder="الخيار 1" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                            <input type="text" class="opt-input" placeholder="الخيار 2" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                            <input type="text" class="opt-input" placeholder="الخيار 3" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                            <input type="text" class="opt-input" placeholder="الخيار 4" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                        </div>
-                        <div style="margin-top:10px;">
-                            <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
-                            <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
-                                <option value="1">الخيار 1</option>
-                                <option value="2">الخيار 2</option>
-                                <option value="3">الخيار 3</option>
-                                <option value="4">الخيار 4</option>
-                            </select>
-                        </div>
-                    </div>`;
+                if (qType === 'truefalse') {
+                    // ═══ صح / غلط ═══
+                    html += `
+                        <div class="question-box-generator" data-qtype="truefalse">
+                            <h4 style="font-size:15px;">السؤال ${i + 1} <span style="font-size:11px; color:#888; font-weight:400;">(صح / غلط)</span></h4>
+                            <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
+                            <input type="hidden" class="opt-input" value="صح">
+                            <input type="hidden" class="opt-input" value="غلط">
+                            <div style="margin-top:10px;">
+                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
+                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
+                                    <option value="1">✅ صح</option>
+                                    <option value="2">❌ غلط</option>
+                                </select>
+                            </div>
+                        </div>`;
+                } else {
+                    // ═══ اختيار من متعدد ═══
+                    html += `
+                        <div class="question-box-generator" data-qtype="mcq">
+                            <h4 style="font-size:15px;">السؤال ${i + 1}</h4>
+                            <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <input type="text" class="opt-input" placeholder="الخيار 1" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                                <input type="text" class="opt-input" placeholder="الخيار 2" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                                <input type="text" class="opt-input" placeholder="الخيار 3" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                                <input type="text" class="opt-input" placeholder="الخيار 4" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
+                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
+                                    <option value="1">الخيار 1</option>
+                                    <option value="2">الخيار 2</option>
+                                    <option value="3">الخيار 3</option>
+                                    <option value="4">الخيار 4</option>
+                                </select>
+                            </div>
+                        </div>`;
+                }
             }
             document.getElementById('questionsContainer').innerHTML = html;
             document.getElementById('saveExamBtn').style.display = 'block';
@@ -1506,6 +1535,8 @@
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
             const oneTimeOnly = document.getElementById('examOneTimeOnly').checked;
+            const questionType = document.getElementById('examQuestionType').value;
+            const note = document.getElementById('examNote').value.trim();
             const boxes = document.querySelectorAll('.question-box-generator');
             if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
@@ -1526,10 +1557,16 @@
             try {
                 const newDocRef = db.collection('exams').doc();
 
-                await newDocRef.set({
+                const examData = {
                     title, grade, oneTimeOnly,
+                    questionType,
                     questions: questionsPublic
-                });
+                };
+
+                // ملاحظة اختيارية
+                if (note) examData.note = note;
+
+                await newDocRef.set(examData);
 
                 await newDocRef.collection('_private').doc('key').set({
                     answers: answersPrivate
@@ -1602,7 +1639,7 @@
             tbody.innerHTML = exams.map((exam, idx) => `
                 <tr>
                     <td>${idx+1}</td>
-                    <td><strong>${esc(exam.title)}</strong></td>
+                    <td><strong>${esc(exam.title)}</strong>${exam.note ? '<br><small style="color:#888;">📝 ' + esc(exam.note) + '</small>' : ''}</td>
                     <td>${esc(exam.grade)}</td>
                     <td>${exam.questions ? exam.questions.length : 0}</td>
                     <td>${exam.oneTimeOnly ? '<span style="background:#d4af37; color:#3b0a0a; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔒 مرة واحدة</span>' : '<span style="background:#2a7a2a; color:#fff; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔓 دائم</span>'}</td>
@@ -1611,7 +1648,6 @@
             `).join('');
         }
 
-        // 🗑️ حذف الاختبار + كل محاولات الطلاب المرتبطة به
         async function deleteExamAndAttempts(examId, examTitle) {
             if (!confirm(`⚠️ هل أنت متأكد من حذف الاختبار "${examTitle}"؟\n\nسيتم حذف كل محاولات الطلاب المرتبطة به أيضاً.`)) return;
 
