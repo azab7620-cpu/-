@@ -39,11 +39,9 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- ═══════════ Firebase SDKs ═══════════ -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <!-- 🆕 App Check SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
 
     <style>
@@ -844,12 +842,13 @@
                     <div class="form-grid">
                         <div><label>عنوان الاختبار</label><input type="text" id="examTitle" required></div>
                         <div><label>الصف الدراسي</label><select id="examGrade" required><option value="">اختر الصف</option></select></div>
-                        <div>
-                            <label>🔤 نوع الأسئلة</label>
+                        <div class="full-width">
+                            <label>🔤 النوع الافتراضي للأسئلة الجديدة</label>
                             <select id="examQuestionType">
                                 <option value="mcq">اختيار من متعدد (4 خيارات)</option>
                                 <option value="truefalse">صح / غلط</option>
                             </select>
+                            <small style="display:block; color:#888; font-size:11px; margin-top:6px;">💡 يمكنك تغيير نوع كل سؤال بشكل منفصل بعد التوليد — يمكّنك من خلط الأنواع في نفس الاختبار.</small>
                         </div>
                         <div><label>عدد الأسئلة</label><input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5"></div>
                         <div class="full-width">
@@ -988,7 +987,7 @@
         }
 
         // ============================================================
-        //  🔥 Firebase + 🆕 App Check (reCAPTCHA v3)
+        //  🔥 Firebase + App Check
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
@@ -1472,62 +1471,14 @@
             const count = parseInt(document.getElementById('examQuestionCount').value);
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
-            const qType = document.getElementById('examQuestionType').value;
+            const defaultType = document.getElementById('examQuestionType').value;
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
             if (!count || count < 1 || count > 50) { alert('أدخل عدد 1-50'); return; }
 
             let html = '<h4 style="color:#3b0a0a; margin:18px 0; border-top:1px dashed #ddd; padding-top:18px;">الأسئلة:</h4>';
 
             for (let i = 0; i < count; i++) {
-                if (qType === 'truefalse') {
-                    // ═══ صح / غلط ═══
-                    html += `
-                        <div class="question-box-generator" data-qtype="truefalse">
-                            <h4 style="font-size:15px;">السؤال ${i + 1} <span style="font-size:11px; color:#888; font-weight:400;">(صح / غلط)</span></h4>
-                            <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
-                            <input type="hidden" class="opt-input" value="صح">
-                            <input type="hidden" class="opt-input" value="غلط">
-                            <div style="margin-top:10px;">
-                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
-                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd; width:100%;">
-                                    <option value="1">✅ صح</option>
-                                    <option value="2">❌ غلط</option>
-                                </select>
-                            </div>
-                            <div style="margin-top:10px;">
-                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">📝 ملاحظة (اختياري):</label>
-                                <input type="text" class="q-note-input" placeholder="مثال: راجع الفصل الثاني" style="width:100%; padding:10px; border:2px dashed #d4af37; border-radius:12px; margin-top:5px; background:#fffdf5;">
-                            </div>
-                        </div>`;
-                } else {
-                    // ═══ اختيار من متعدد ═══
-                    html += `
-                        <div class="question-box-generator" data-qtype="mcq">
-                            <h4 style="font-size:15px;">السؤال ${i + 1}</h4>
-                            <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                <input type="text" class="opt-input" placeholder="الخيار 1" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                                <input type="text" class="opt-input" placeholder="الخيار 2" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                                <input type="text" class="opt-input" placeholder="الخيار 3" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                                <input type="text" class="opt-input" placeholder="الخيار 4" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
-                            </div>
-                            <div style="margin-top:10px;">
-                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
-                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd; width:100%;">
-                                    <option value="1">الخيار 1</option>
-                                    <option value="2">الخيار 2</option>
-                                    <option value="3">الخيار 3</option>
-                                    <option value="4">الخيار 4</option>
-                                </select>
-                            </div>
-                            <div style="margin-top:10px;">
-                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">📝 ملاحظة (اختياري):</label>
-                                <input type="text" class="q-note-input" placeholder="مثال: راجع الفصل الثاني" style="width:100%; padding:10px; border:2px dashed #d4af37; border-radius:12px; margin-top:5px; background:#fffdf5;">
-                            </div>
-                        </div>`;
-                }
+                html += buildQuestionBoxHTML(i, defaultType);
             }
             document.getElementById('questionsContainer').innerHTML = html;
             document.getElementById('saveExamBtn').style.display = 'block';
@@ -1535,11 +1486,109 @@
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
+        // 🆕 بناء HTML لصندوق سؤال واحد
+        function buildQuestionBoxHTML(index, type) {
+            return `
+                <div class="question-box-generator" data-qtype="${type}">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+                        <h4 style="font-size:15px; margin:0;">السؤال ${index + 1}</h4>
+                        <div style="display:flex; align-items:center; gap:6px; background:#fff9e6; padding:6px 12px; border-radius:12px; border:1px solid #eadacc;">
+                            <label style="font-size:12px; font-weight:700; color:#3b0a0a; margin:0;">نوع السؤال:</label>
+                            <select class="q-type-select" onchange="changeQuestionType(this)" style="padding:6px 10px; border:2px solid #eadacc; border-radius:10px; font-size:12px; font-family:'Cairo', sans-serif; background:#fff; cursor:pointer;">
+                                <option value="mcq" ${type === 'mcq' ? 'selected' : ''}>🔤 اختيار من متعدد</option>
+                                <option value="truefalse" ${type === 'truefalse' ? 'selected' : ''}>✅ صح / غلط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <input type="text" class="q-text-input" placeholder="نص السؤال" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px; margin-bottom:10px;">
+                    <div class="options-container">
+                        ${getOptionsFieldsHTML(type)}
+                    </div>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
+                        <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd; width:100%;">
+                            ${getCorrectOptionsHTML(type)}
+                        </select>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:13px; font-weight:700; color:#3b0a0a;">📝 ملاحظة (اختياري):</label>
+                        <input type="text" class="q-note-input" placeholder="مثال: راجع الفصل الثاني" style="width:100%; padding:10px; border:2px dashed #d4af37; border-radius:12px; margin-top:5px; background:#fffdf5;">
+                    </div>
+                </div>`;
+        }
+
+        // 🆕 خيارات السؤال حسب نوعه
+        function getOptionsFieldsHTML(type) {
+            if (type === 'truefalse') {
+                return `
+                    <input type="hidden" class="opt-input" value="صح">
+                    <input type="hidden" class="opt-input" value="غلط">
+                    <div style="background:linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%); border:2px dashed #6ca0dc; border-radius:12px; padding:14px; text-align:center; color:#1e5a8a; font-weight:800; font-size:13px;">
+                        ✅ الخيارات ثابتة: <strong>صح</strong> / <strong>غلط</strong>
+                    </div>`;
+            }
+            return `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <input type="text" class="opt-input" placeholder="الخيار 1" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                    <input type="text" class="opt-input" placeholder="الخيار 2" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <input type="text" class="opt-input" placeholder="الخيار 3" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                    <input type="text" class="opt-input" placeholder="الخيار 4" style="padding:10px; border:2px solid #ddd; border-radius:12px;">
+                </div>`;
+        }
+
+        // 🆕 خيارات "الإجابة الصحيحة"
+        function getCorrectOptionsHTML(type) {
+            if (type === 'truefalse') {
+                return `
+                    <option value="1">✅ صح</option>
+                    <option value="2">❌ غلط</option>`;
+            }
+            return `
+                <option value="1">الخيار 1</option>
+                <option value="2">الخيار 2</option>
+                <option value="3">الخيار 3</option>
+                <option value="4">الخيار 4</option>`;
+        }
+
+        // 🆕 لما الأدمن يغيّر نوع السؤال
+        function changeQuestionType(selectEl) {
+            const box = selectEl.closest('.question-box-generator');
+            if (!box) return;
+            const newType = selectEl.value;
+            const oldType = box.getAttribute('data-qtype') || 'mcq';
+            if (newType === oldType) return;
+
+            // نحفظ البيانات الحالية
+            const currentQText = box.querySelector('.q-text-input')?.value || '';
+            const currentNote = box.querySelector('.q-note-input')?.value || '';
+
+            // نحدّث النوع
+            box.setAttribute('data-qtype', newType);
+
+            // نستبدل قسم الخيارات
+            const optionsContainer = box.querySelector('.options-container');
+            if (optionsContainer) optionsContainer.innerHTML = getOptionsFieldsHTML(newType);
+
+            // نحدّث قائمة الإجابة الصحيحة
+            const correctSelect = box.querySelector('.correct-select');
+            if (correctSelect) {
+                correctSelect.innerHTML = getCorrectOptionsHTML(newType);
+                correctSelect.value = '1';
+            }
+
+            // نرجّع النصوص
+            const qTextEl = box.querySelector('.q-text-input');
+            const noteEl = box.querySelector('.q-note-input');
+            if (qTextEl) qTextEl.value = currentQText;
+            if (noteEl) noteEl.value = currentNote;
+        }
+
         async function saveFullExam() {
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
             const oneTimeOnly = document.getElementById('examOneTimeOnly').checked;
-            const questionType = document.getElementById('examQuestionType').value;
             const boxes = document.querySelectorAll('.question-box-generator');
             if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
@@ -1554,11 +1603,12 @@
                 const correct = parseInt(box.querySelector('.correct-select').value) - 1;
                 const qNoteEl = box.querySelector('.q-note-input');
                 const qNote = qNoteEl ? qNoteEl.value.trim() : '';
+                const qType = box.getAttribute('data-qtype') || 'mcq';
 
                 if (!q || opts.includes('')) { alert('يرجى ملء السؤال رقم ' + (i + 1)); return; }
 
-                const questionObj = { q, options: opts };
-                if (qNote) questionObj.note = qNote;  // نحفظها بس لو موجودة
+                const questionObj = { q, options: opts, type: qType };
+                if (qNote) questionObj.note = qNote;
 
                 questionsPublic.push(questionObj);
                 answersPrivate.push(correct);
@@ -1569,7 +1619,6 @@
 
                 await newDocRef.set({
                     title, grade, oneTimeOnly,
-                    questionType,
                     questions: questionsPublic
                 });
 
