@@ -12,7 +12,7 @@
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: https:;
       frame-src https://www.youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.google.com https://www.recaptcha.net;
-      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net https://bqbuceazgcrpqogetwkg.supabase.co;
+      connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net https://test.azab7620.workers.dev;
       media-src 'self' blob: mediastream:;
       object-src 'none';
       base-uri 'self';
@@ -1391,7 +1391,7 @@
         }
 
         // ============================================================
-        //  🔥 Firebase (App Check معطّل مؤقتاً لتسريع التحميل)
+        //  🔥 Firebase
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD0dYnN3dkORPsmJxzsHNHViMbVBL-93_o",
@@ -1407,28 +1407,23 @@
         const auth = firebase.auth();
 
         // ============================================================
-        //  🚀 Supabase Edge Function (تصحيح الاختبارات التلقائي)
+        //  🚀 Cloudflare Worker (تصحيح الاختبارات التلقائي)
         // ============================================================
-        const SUPABASE_FUNCTION_URL = 'https://bqbuceazgcrpqogetwkg.supabase.co/functions/v1/bright-handler';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxdWJjZWF6Z2NycHFvZ2V0d2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTUyOTIsImV4cCI6MjEwNzIzMTI5Mn0._qsmDTXsqOfcrvvltGwkM4c9Ur0EfjUvQ34Q3baIcsA';
+        const GRADING_WORKER_URL = 'https://test.azab7620.workers.dev';
 
-        async function callSupabaseGrading(attemptId) {
+        async function callGradingWorker(attemptId) {
             try {
-                console.log('🚀 Calling Supabase with attemptId:', attemptId);
-                const res = await fetch(SUPABASE_FUNCTION_URL, {
+                console.log('🚀 Calling Grading Worker with attemptId:', attemptId);
+                const res = await fetch(GRADING_WORKER_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                        'apikey': SUPABASE_ANON_KEY
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ attemptId })
                 });
                 const data = await res.json();
-                console.log('✅ Supabase grading result:', data);
+                console.log('✅ Grading result:', data);
                 return data;
             } catch (err) {
-                console.error('❌ Supabase grading call failed:', err);
+                console.error('❌ Grading call failed:', err);
                 return { error: err.message };
             }
         }
@@ -2681,8 +2676,8 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // 🚀 استدعاء Supabase Edge Function للتصحيح التلقائي
-                callSupabaseGrading(attemptRef.id);
+                // 🚀 استدعاء Cloudflare Worker للتصحيح التلقائي
+                callGradingWorker(attemptRef.id);
 
                 document.getElementById('questionNav').style.display = 'none';
                 document.getElementById('qTextDisplay').style.display = 'none';
