@@ -737,7 +737,6 @@
         body.dark-mode .q-btn.answered { background: var(--gold); color: #1a1a2e; }
         body.dark-mode .btn-prev { background: #2a3a5a; color: var(--text-primary); }
 
-        /* 🆕 صندوق الملاحظة داخل السؤال */
         #qNoteDisplay {
             background: linear-gradient(135deg, #fffdf5 0%, #fff9e6 100%);
             border: 2px dashed #d4af37;
@@ -1375,8 +1374,9 @@
     <script>
         // ═══════════════════════════════════════════════════════════
         //  🌐 رابط Apps Script للتصحيح الفوري
+        //  ✅ تم تحديث الرابط إلى النسخة الجديدة
         // ═══════════════════════════════════════════════════════════
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeYymgo9DhJEo3OnuU4nEadjRUahm66KFtGM5Lb8yYaIcltUP01ciMKuDaco8le03X/exec';
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVlc4SxawsFDIojc8lc3ybK3XBrf57M6PT-JytVnEJGdSw2vSLyDmdOd3Hy1dPt9Wj/exec';
 
         // ═══════════════════════════════════════════════════════════
         //  🔒 XSS Protection Helpers
@@ -1785,6 +1785,9 @@
             }
         }
 
+        // ═══════════════════════════════════════════════════════════
+        //  📊 عرض نتيجة المحاولة بالتفصيل (زي الصورة)
+        // ═══════════════════════════════════════════════════════════
         async function showAttemptResult(attemptId) {
             const resultDiv = document.getElementById('attempt-result-' + attemptId);
             if (!resultDiv) return;
@@ -1814,6 +1817,15 @@
                     return;
                 }
 
+                // جلب بيانات الاختبار الأصلي (الأسئلة والخيارات)
+                let examDoc = null;
+                try {
+                    const examSnap = await db.collection('exams').doc(att.examId).get();
+                    if (examSnap.exists) examDoc = examSnap.data();
+                } catch (e) {
+                    console.warn('تعذر جلب بيانات الاختبار:', e);
+                }
+
                 const score = Number(att.score) || 0;
                 const correct = Number(att.correctCount) || 0;
                 const wrong = Number(att.wrongCount) || 0;
@@ -1821,6 +1833,80 @@
                 const total = Number(att.totalQuestions) || (correct + wrong + unanswered);
                 const isPassed = score >= 50;
 
+                // ✅ بناء بطاقات الإحصائيات
+                const statsHtml = `
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-bottom:15px;">
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+                            <div style="font-size:22px; font-weight:900; color:#b8935a;">${total}</div>
+                            <div style="font-size:11px; color:#666; margin-top:3px;">عدد الأسئلة</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+                            <div style="font-size:22px; font-weight:900; color:#b8935a;">${correct} / ${total}</div>
+                            <div style="font-size:11px; color:#666; margin-top:3px;">المجموع</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+                            <div style="font-size:22px; font-weight:900; color:${isPassed ? '#2a7a2a' : '#a00'};">${score}%</div>
+                            <div style="font-size:11px; color:#666; margin-top:3px;">النسبة المئوية</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+                            <div style="font-size:22px; font-weight:900; color:#2a7a2a;">${correct}</div>
+                            <div style="font-size:11px; color:#666; margin-top:3px;">إجابات صحيحة</div>
+                        </div>
+                    </div>
+                `;
+
+                // ✅ بناء قسم "الإجابات" التفصيلي
+                let answersReviewHtml = '';
+                if (examDoc && examDoc.questions && Array.isArray(examDoc.questions) && att.studentAnswers && Array.isArray(att.studentAnswers)) {
+                    const correctAnswersArr = att.correctAnswers || [];
+
+                    examDoc.questions.forEach((q, idx) => {
+                        const userAnswerIndex = att.studentAnswers[idx];
+                        const correctAnswerIndex = correctAnswersArr[idx];
+
+                        const isUserCorrect = userAnswerIndex === correctAnswerIndex;
+                        const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
+
+                        // تحديد لون وإطار السؤال
+                        const questionBorderColor = isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888');
+                        const questionBgColor = isUserCorrect ? '#f0fdf4' : (isUserAnswered ? '#fef2f2' : '#f9f9f9');
+
+                        // بناء الخيارات
+                        let optionsHtml = '';
+                        q.options.forEach((optText, optIdx) => {
+                            let optionStyle = 'padding:10px 14px; margin-bottom:6px; border-radius:10px; border:1px solid #eee;';
+
+                            if (optIdx === correctAnswerIndex) {
+                                optionStyle += ' background:#d4edda; border-color:#2a7a2a; font-weight:700;';
+                            } else if (optIdx === userAnswerIndex) {
+                                optionStyle += ' background:#f8d7da; border-color:#a00; text-decoration:line-through;';
+                            }
+
+                            optionsHtml += `<div style="${optionStyle} display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:16px;">${optIdx === correctAnswerIndex ? '✅' : (optIdx === userAnswerIndex ? '❌' : '⚪')}</span>
+                                <span>${esc(optText)}</span>
+                            </div>`;
+                        });
+
+                        answersReviewHtml += `
+                            <div style="background:${questionBgColor}; border:2px solid ${questionBorderColor}; border-radius:14px; padding:15px; margin-bottom:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                                    <span style="font-weight:800; color:#3b0a0a; font-size:14px;">السؤال ${idx + 1}</span>
+                                    <span style="font-size:12px; font-weight:700; color:${isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888')}; background:#fff; padding:4px 12px; border-radius:50px; border:1px solid ${questionBorderColor};">
+                                        ${isUserCorrect ? '✅ صحيحة' : (isUserAnswered ? '❌ خاطئة' : '⚪ بدون إجابة')}
+                                    </span>
+                                </div>
+                                <div style="font-size:14px; color:#333; margin-bottom:12px; line-height:1.6;">${esc(q.q)}</div>
+                                ${q.note ? `<div style="background:#fffdf5; border:1px dashed #d4af37; border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; color:#8a6f1d;">📝 ${esc(q.note)}</div>` : ''}
+                                <div>${optionsHtml}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات (بيانات الاختبار غير متوفرة).</p>';
+                }
+
+                // ✅ بناء الواجهة النهائية
                 resultDiv.innerHTML = `
                     <div style="background:${isPassed ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)'}; padding:18px; border-radius:16px; border:2px solid ${isPassed ? '#2a7a2a' : '#a00'};">
                         <div style="text-align:center; margin-bottom:15px;">
@@ -1830,27 +1916,13 @@
                             </h3>
                         </div>
 
-                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:15px;">
-                            <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="font-size:22px; font-weight:900; color:#b8935a;">${score}%</div>
-                                <div style="font-size:11px; color:#666; margin-top:3px;">النسبة النهائية</div>
-                            </div>
-                            <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="font-size:22px; font-weight:900; color:#2a7a2a;">${correct}</div>
-                                <div style="font-size:11px; color:#666; margin-top:3px;">إجابات صحيحة</div>
-                            </div>
-                            <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="font-size:22px; font-weight:900; color:#a00;">${wrong}</div>
-                                <div style="font-size:11px; color:#666; margin-top:3px;">إجابات خاطئة</div>
-                            </div>
-                            <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="font-size:22px; font-weight:900; color:#888;">${unanswered}</div>
-                                <div style="font-size:11px; color:#666; margin-top:3px;">بدون إجابة</div>
-                            </div>
-                            <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="font-size:22px; font-weight:900; color:#3b0a0a;">${total}</div>
-                                <div style="font-size:11px; color:#666; margin-top:3px;">إجمالي الأسئلة</div>
-                            </div>
+                        ${statsHtml}
+
+                        <div style="background:#fff; border-radius:14px; padding:15px; margin-top:10px;">
+                            <h4 style="margin:0 0 12px 0; font-size:15px; color:#3b0a0a; display:flex; align-items:center; gap:6px;">
+                                📋 الإجابات
+                            </h4>
+                            ${answersReviewHtml}
                         </div>
 
                         <div style="margin-top:15px; padding-top:12px; border-top:1px dashed rgba(0,0,0,0.1); text-align:center; font-size:12px; color:#555;">
@@ -2637,17 +2709,14 @@
             }
         }
 
-        // 🆕 نسخة محدّثة: بتعرض الملاحظة داخل السؤال
         function renderQuestion() {
             const q = currentExam.questions[currentQIndex];
             const qTextEl = document.getElementById('qTextDisplay');
             qTextEl.innerHTML = esc(q.q);
 
-            // مسح أي ملاحظة قديمة
             const oldNote = document.getElementById('qNoteDisplay');
             if (oldNote) oldNote.remove();
 
-            // إضافة صندوق الملاحظة لو موجودة
             if (q.note) {
                 const noteEl = document.createElement('div');
                 noteEl.id = 'qNoteDisplay';
@@ -2733,7 +2802,6 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // 🚀 إشعار فوري لـ Apps Script
                 try {
                     fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
@@ -2745,23 +2813,19 @@
                     console.warn('⚠️ خطأ في إرسال الإشعار:', notifyErr);
                 }
 
-                // إخفاء عناصر الاختبار
                 document.getElementById('questionNav').style.display = 'none';
                 document.getElementById('qTextDisplay').style.display = 'none';
                 document.getElementById('optionsList').style.display = 'none';
                 document.querySelector('.nav-btns').style.display = 'none';
 
-                // إخفاء الملاحظة لو موجودة
                 const qNote = document.getElementById('qNoteDisplay');
                 if (qNote) qNote.remove();
 
                 document.getElementById('resultBox').style.display = 'block';
 
-                // إخفاء زرار العودة لحد ما النتيجة تظهر
                 const exitBtn = document.getElementById('exitExamBtn');
                 if (exitBtn) exitBtn.style.display = 'none';
 
-                // عرض العدّاد التنازلي
                 document.getElementById('resultTitle').textContent = '⏳ جاري التصحيح';
                 document.getElementById('resultDetails').innerHTML = `
                     <div style="text-align:center; padding:20px 0;">
@@ -2771,13 +2835,11 @@
                 `;
                 document.getElementById('reviewAnswers').innerHTML = '';
 
-                // متغيرات الحالة
                 let countdownValue = 3;
                 let resultData = null;
                 let resultReceived = false;
                 let countdownDone = false;
 
-                // دالة عرض النتيجة
                 const showResult = (data) => {
                     if (!data) return;
                     const scorePct = Number(data.score) || 0;
@@ -2795,11 +2857,9 @@
                     `;
                     document.getElementById('reviewAnswers').innerHTML = '';
 
-                    // إظهار زرار العودة
                     if (exitBtn) exitBtn.style.display = 'inline-block';
                 };
 
-                // بدء العدّاد
                 const countdownInterval = setInterval(() => {
                     countdownValue--;
                     const el = document.getElementById('countdownNumber');
@@ -2828,7 +2888,6 @@
                     }
                 }, 1000);
 
-                // مراقبة المحاولة
                 currentAttemptUnsub = attemptRef.onSnapshot(snap => {
                     if (!snap.exists) return;
                     const data = snap.data();
@@ -2870,7 +2929,6 @@
             const exitBtn = document.getElementById('exitExamBtn');
             if (exitBtn) exitBtn.style.display = 'none';
 
-            // إزالة الملاحظة لو موجودة
             const qNote = document.getElementById('qNoteDisplay');
             if (qNote) qNote.remove();
 
