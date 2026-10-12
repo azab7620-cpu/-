@@ -29,6 +29,8 @@
                   wss://*.firebaseio.com
                   https://*.firebaseapp.com
                   https://content-firebaseappcheck.googleapis.com
+                  https://script.google.com
+                  https://script.googleusercontent.com
                   https://www.google.com
                   https://www.google.com/recaptcha/
                   https://www.recaptcha.net;
@@ -1344,6 +1346,12 @@
 
     <script>
         // ============================================================
+        //  🌐 رابط Apps Script للتصحيح الفوري
+        //  ⚠️ بعد تحديث المفتاح، هذا الرابط لا يحتاج تغيير
+        // ============================================================
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeYymgo9DhJEo3OnuU4nEadjRUahm66KFtGM5Lb8yYaIcltUP01ciMKuDaco8le03X/exec';
+
+        // ============================================================
         //  🔒 XSS Protection Helpers
         // ============================================================
         function esc(s) {
@@ -1427,11 +1435,8 @@
         };
         firebase.initializeApp(firebaseConfig);
 
-        // 🆕 تشغيل App Check بـ reCAPTCHA v3
-        // الـ Site Key من Firebase Console → App Check → reCAPTCHA v3
         try {
             const appCheck = firebase.appCheck();
-            // الوسيط الثاني = true يعني reCAPTCHA v3 (بدون تحدي مرئي)
             appCheck.activate('6LdFfxestAAAAAB3W4cnUYQbVMe1ribUigtWSq_0K', true);
             console.log('✅ App Check (reCAPTCHA v3) مُفعّل');
         } catch (e) {
@@ -2685,6 +2690,18 @@
                     pending: true,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // 🚀 إشعار فوري لـ Apps Script لتصحيح المحاولة حالاً (2-3 ثواني)
+                try {
+                    fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({ attemptId: attemptRef.id })
+                    }).catch(err => console.warn('⚠️ فشل الإشعار الفوري:', err));
+                } catch (notifyErr) {
+                    console.warn('⚠️ خطأ في إرسال الإشعار:', notifyErr);
+                }
 
                 document.getElementById('questionNav').style.display = 'none';
                 document.getElementById('qTextDisplay').style.display = 'none';
