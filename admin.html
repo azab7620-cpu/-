@@ -842,14 +842,6 @@
                     <div class="form-grid">
                         <div><label>عنوان الاختبار</label><input type="text" id="examTitle" required></div>
                         <div><label>الصف الدراسي</label><select id="examGrade" required><option value="">اختر الصف</option></select></div>
-                        <div class="full-width">
-                            <label>🔤 النوع الافتراضي للأسئلة الجديدة</label>
-                            <select id="examQuestionType">
-                                <option value="mcq">اختيار من متعدد (4 خيارات)</option>
-                                <option value="truefalse">صح / غلط</option>
-                            </select>
-                            <small style="display:block; color:#888; font-size:11px; margin-top:6px;">💡 يمكنك تغيير نوع كل سؤال بشكل منفصل بعد التوليد — يمكّنك من خلط الأنواع في نفس الاختبار.</small>
-                        </div>
                         <div><label>عدد الأسئلة</label><input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5"></div>
                         <div class="full-width">
                             <label class="exam-one-time-box">
@@ -1471,18 +1463,18 @@
             const count = parseInt(document.getElementById('examQuestionCount').value);
             const title = document.getElementById('examTitle').value.trim();
             const grade = document.getElementById('examGrade').value;
-            const defaultType = document.getElementById('examQuestionType').value;
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
             if (!count || count < 1 || count > 50) { alert('أدخل عدد 1-50'); return; }
 
             let html = '<h4 style="color:#3b0a0a; margin:18px 0; border-top:1px dashed #ddd; padding-top:18px;">الأسئلة:</h4>';
 
             for (let i = 0; i < count; i++) {
-                html += buildQuestionBoxHTML(i, defaultType);
+                // النوع الافتراضي للأسئلة الجديدة = اختيار من متعدد
+                html += buildQuestionBoxHTML(i, 'mcq');
             }
             document.getElementById('questionsContainer').innerHTML = html;
             document.getElementById('saveExamBtn').style.display = 'block';
-            document.getElementById('examAddMsg').innerHTML = '<div class="alert alert-success">✅ تم توليد ' + count + ' أسئلة.</div>';
+            document.getElementById('examAddMsg').innerHTML = '<div class="alert alert-success">✅ تم توليد ' + count + ' أسئلة. اختار نوع كل سؤال من فوقه.</div>';
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
