@@ -1428,6 +1428,41 @@
             }
         }
 
+        // 🔥 تصحيح تلقائي لكل المحاولات المعلقة
+        async function autoGradePendingAttempts(userId) {
+            try {
+                const snap = await db.collection('examAttempts')
+                    .where('studentId', '==', userId)
+                    .where('pending', '==', true)
+                    .get();
+
+                if (snap.empty) return;
+
+                console.log(`🔍 عند ${snap.size} محاولة معلقة، جاري تصحيحها...`);
+
+                const promises = snap.docs.map(async (doc) => {
+                    try {
+                        const res = await fetch(GRADING_WORKER_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ attemptId: doc.id })
+                        });
+                        const data = await res.json();
+                        console.log(`✅ ${doc.id}:`, data);
+                        return data;
+                    } catch (err) {
+                        console.warn(`❌ فشل تصحيح ${doc.id}:`, err);
+                        return null;
+                    }
+                });
+
+                await Promise.all(promises);
+                console.log('🎉 خلص التصحيح التلقائي');
+            } catch (err) {
+                console.error('خطأ في التصحيح التلقائي:', err);
+            }
+        }
+
         let ignoreAuthChange = false;
 
         async function getTeachersPublic() {
@@ -1451,7 +1486,6 @@
             }, 100);
         }
 
-        // ✅ renderTeachers مع Cache
         async function renderTeachers() {
             const grid = document.getElementById('teachersGrid');
             if (!grid) return;
@@ -1490,7 +1524,6 @@
             }
         }
 
-        // ✅ renderCourses مع Cache
         async function renderCourses() {
             const grid = document.getElementById('coursesGrid');
             if (!grid) return;
@@ -1528,7 +1561,6 @@
             }
         }
 
-        // ✅ renderBooks مع Cache
         async function renderBooks() {
             const grid = document.getElementById('booksGrid');
             if (!grid) return;
@@ -1638,7 +1670,10 @@
             btnElement.classList.add('active');
 
             if (tabName === 'grades' && currentUser) {
-                loadStudentGrades(currentUser.id);
+                // 🔥 أول حاجة: صحّح المحاولات المعلقة، بعدين اعرض الدرجات
+                autoGradePendingAttempts(currentUser.id).then(() => {
+                    loadStudentGrades(currentUser.id);
+                });
             }
         }
 
@@ -1826,6 +1861,9 @@
             currentUser = user;
             document.getElementById('studentNameDash').textContent = user.name || '';
             document.getElementById('studentGradeDash').textContent = user.grade || '';
+
+            // 🔥 تصحيح تلقائي في الخلفية (بدون ما نستنى)
+            autoGradePendingAttempts(user.id);
 
             const a = await fetchStudentAttempts(user.id);
 
