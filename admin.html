@@ -853,10 +853,6 @@
                         </div>
                         <div><label>عدد الأسئلة</label><input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5"></div>
                         <div class="full-width">
-                            <label>📝 ملاحظة (اختياري)</label>
-                            <textarea id="examNote" rows="3" placeholder="مثال: الاختبار يشمل الفصل الأول والثاني" style="width:100%; padding:12px 16px; border:2px solid #eadacc; border-radius:14px; font-size:13px; font-family:'Cairo', sans-serif; outline:none; resize:vertical;"></textarea>
-                        </div>
-                        <div class="full-width">
                             <label class="exam-one-time-box">
                                 <input type="checkbox" id="examOneTimeOnly">
                                 <span>🔒 اختبار لمرة واحدة فقط</span>
@@ -1493,10 +1489,14 @@
                             <input type="hidden" class="opt-input" value="غلط">
                             <div style="margin-top:10px;">
                                 <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
-                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
+                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd; width:100%;">
                                     <option value="1">✅ صح</option>
                                     <option value="2">❌ غلط</option>
                                 </select>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">📝 ملاحظة (اختياري):</label>
+                                <input type="text" class="q-note-input" placeholder="مثال: راجع الفصل الثاني" style="width:100%; padding:10px; border:2px dashed #d4af37; border-radius:12px; margin-top:5px; background:#fffdf5;">
                             </div>
                         </div>`;
                 } else {
@@ -1515,12 +1515,16 @@
                             </div>
                             <div style="margin-top:10px;">
                                 <label style="font-size:13px; font-weight:700; color:#3b0a0a;">الإجابة الصحيحة:</label>
-                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd;">
+                                <select class="correct-select" style="padding:8px; border-radius:12px; border:2px solid #ddd; width:100%;">
                                     <option value="1">الخيار 1</option>
                                     <option value="2">الخيار 2</option>
                                     <option value="3">الخيار 3</option>
                                     <option value="4">الخيار 4</option>
                                 </select>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label style="font-size:13px; font-weight:700; color:#3b0a0a;">📝 ملاحظة (اختياري):</label>
+                                <input type="text" class="q-note-input" placeholder="مثال: راجع الفصل الثاني" style="width:100%; padding:10px; border:2px dashed #d4af37; border-radius:12px; margin-top:5px; background:#fffdf5;">
                             </div>
                         </div>`;
                 }
@@ -1536,7 +1540,6 @@
             const grade = document.getElementById('examGrade').value;
             const oneTimeOnly = document.getElementById('examOneTimeOnly').checked;
             const questionType = document.getElementById('examQuestionType').value;
-            const note = document.getElementById('examNote').value.trim();
             const boxes = document.querySelectorAll('.question-box-generator');
             if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
             if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
@@ -1549,24 +1552,26 @@
                 const q = box.querySelector('.q-text-input').value.trim();
                 const opts = Array.from(box.querySelectorAll('.opt-input')).map(x => x.value.trim());
                 const correct = parseInt(box.querySelector('.correct-select').value) - 1;
+                const qNoteEl = box.querySelector('.q-note-input');
+                const qNote = qNoteEl ? qNoteEl.value.trim() : '';
+
                 if (!q || opts.includes('')) { alert('يرجى ملء السؤال رقم ' + (i + 1)); return; }
-                questionsPublic.push({ q, options: opts });
+
+                const questionObj = { q, options: opts };
+                if (qNote) questionObj.note = qNote;  // نحفظها بس لو موجودة
+
+                questionsPublic.push(questionObj);
                 answersPrivate.push(correct);
             }
 
             try {
                 const newDocRef = db.collection('exams').doc();
 
-                const examData = {
+                await newDocRef.set({
                     title, grade, oneTimeOnly,
                     questionType,
                     questions: questionsPublic
-                };
-
-                // ملاحظة اختيارية
-                if (note) examData.note = note;
-
-                await newDocRef.set(examData);
+                });
 
                 await newDocRef.collection('_private').doc('key').set({
                     answers: answersPrivate
@@ -1639,7 +1644,7 @@
             tbody.innerHTML = exams.map((exam, idx) => `
                 <tr>
                     <td>${idx+1}</td>
-                    <td><strong>${esc(exam.title)}</strong>${exam.note ? '<br><small style="color:#888;">📝 ' + esc(exam.note) + '</small>' : ''}</td>
+                    <td><strong>${esc(exam.title)}</strong></td>
                     <td>${esc(exam.grade)}</td>
                     <td>${exam.questions ? exam.questions.length : 0}</td>
                     <td>${exam.oneTimeOnly ? '<span style="background:#d4af37; color:#3b0a0a; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔒 مرة واحدة</span>' : '<span style="background:#2a7a2a; color:#fff; padding:5px 12px; border-radius:50px; font-weight:700; font-size:11px;">🔓 دائم</span>'}</td>
