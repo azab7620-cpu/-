@@ -759,6 +759,168 @@
             border-color: #d4af37;
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           📊 تصميم نتيجة الاختبار الجديد (نفس ترتيب الصورة - بألوان المنصة)
+           ═══════════════════════════════════════════════════════════ */
+        .exam-result-light {
+            background: #f8f6f2;
+            color: #333;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #f0ede8;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .exam-result-light .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .exam-result-light .stat-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #f0ede8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+        .exam-result-light .stat-card .value {
+            font-size: 22px;
+            font-weight: 900;
+            color: #3b0a0a;
+        }
+        .exam-result-light .stat-card .label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+        .exam-result-light .answers-header {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .exam-result-light .answers-header span {
+            background: linear-gradient(135deg, #3b0a0a 0%, #520e0e 100%);
+            color: #d4af37;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 16px;
+            border: 1px solid #d4af37;
+            box-shadow: 0 4px 12px rgba(59,10,10,0.2);
+        }
+        .exam-result-light .question-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #f0ede8;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.03);
+            transition: 0.3s;
+        }
+        .exam-result-light .question-card.correct {
+            border-color: #2a7a2a;
+            background: #f0fdf4;
+        }
+        .exam-result-light .question-card.wrong {
+            border-color: #a00;
+            background: #fef2f2;
+        }
+        .exam-result-light .question-card.unanswered {
+            border-color: #ccc;
+            background: #f9f9f9;
+        }
+        .exam-result-light .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .exam-result-light .question-header .q-number {
+            font-weight: 900;
+            color: #3b0a0a;
+            font-size: 16px;
+        }
+        .exam-result-light .question-header .status-badge {
+            font-size: 12px;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 50px;
+            color: #fff;
+        }
+        .exam-result-light .question-header .status-badge.correct {
+            background: #2a7a2a;
+        }
+        .exam-result-light .question-header .status-badge.wrong {
+            background: #a00;
+        }
+        .exam-result-light .question-header .status-badge.unanswered {
+            background: #888;
+        }
+        .exam-result-light .question-text {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 18px;
+            line-height: 1.8;
+            font-weight: 700;
+        }
+        .exam-result-light .option-row {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fff;
+            color: #555;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .exam-result-light .option-row.correct {
+            background: #d4edda;
+            border-color: #2a7a2a;
+            color: #155724;
+            font-weight: 700;
+        }
+        .exam-result-light .option-row.wrong {
+            background: #f8d7da;
+            border-color: #a00;
+            color: #721c24;
+            text-decoration: line-through;
+        }
+        .exam-result-light .note-box {
+            background: #fffdf5;
+            border: 2px dashed #d4af37;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #8a6f1d;
+            line-height: 1.7;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(212,175,55,0.1);
+        }
+        .exam-result-light .note-box .note-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .exam-result-light .result-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #eee;
+            font-size: 12px;
+            color: #888;
+        }
+
         .auth-page-section { display: none; min-height: 100vh; width: 100%; background: var(--maroon); animation: fadeInUp 0.5s ease; }
         .auth-layout-container { display: flex; width: 100%; min-height: 100vh; }
 
@@ -1374,7 +1536,6 @@
     <script>
         // ═══════════════════════════════════════════════════════════
         //  🌐 رابط Apps Script للتصحيح الفوري
-        //  ✅ تم تحديث الرابط إلى النسخة الجديدة
         // ═══════════════════════════════════════════════════════════
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVlc4SxawsFDIojc8lc3ybK3XBrf57M6PT-JytVnEJGdSw2vSLyDmdOd3Hy1dPt9Wj/exec';
 
@@ -1786,7 +1947,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        //  📊 عرض نتيجة المحاولة بالتفصيل (زي الصورة)
+        //  📊 عرض نتيجة المحاولة بالتفصيل (نفس ترتيب الصورة - بألوان المنصة)
         // ═══════════════════════════════════════════════════════════
         async function showAttemptResult(attemptId) {
             const resultDiv = document.getElementById('attempt-result-' + attemptId);
@@ -1831,39 +1992,30 @@
                 const wrong = Number(att.wrongCount) || 0;
                 const unanswered = Number(att.unanswered) || 0;
                 const total = Number(att.totalQuestions) || (correct + wrong + unanswered);
-                const isPassed = score >= 50;
 
-                // ✅ بناء بطاقات الإحصائيات
+                // ✅ 1. بناء بطاقات الإحصائيات
                 const statsHtml = `
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-bottom:20px;">
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:#b8935a;">${total}</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">عدد الأسئلة</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value">${total}</div>
+                            <div class="label">عدد الأسئلة</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:#b8935a;">${correct} / ${total}</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">المجموع</div>
+                        <div class="stat-card">
+                            <div class="value">${score}%</div>
+                            <div class="label">النسبة</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:${isPassed ? '#2a7a2a' : '#a00'};">${score}%</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">النسبة المئوية</div>
+                        <div class="stat-card">
+                            <div class="value">${correct}</div>
+                            <div class="label">إجابات صحيحة</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:#2a7a2a;">${correct}</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">إجابات صحيحة</div>
-                        </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:#a00;">${wrong}</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">إجابات خاطئة</div>
-                        </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
-                            <div style="font-size:20px; font-weight:900; color:#888;">${unanswered}</div>
-                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">بدون إجابة</div>
+                        <div class="stat-card">
+                            <div class="value">${wrong}</div>
+                            <div class="label">إجابات خاطئة</div>
                         </div>
                     </div>
                 `;
 
-                // ✅ بناء قسم "الإجابات" التفصيلي
+                // ✅ 2. بناء قسم "الإجابات" التفصيلي
                 let answersReviewHtml = '';
                 if (examDoc && examDoc.questions && Array.isArray(examDoc.questions) && att.studentAnswers && Array.isArray(att.studentAnswers)) {
                     const correctAnswersArr = att.correctAnswers || [];
@@ -1875,51 +2027,58 @@
                         const isUserCorrect = userAnswerIndex === correctAnswerIndex;
                         const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
 
-                        // تحديد لون وإطار السؤال
-                        const questionBorderColor = isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888');
-                        const questionBgColor = isUserCorrect ? '#f0fdf4' : (isUserAnswered ? '#fef2f2' : '#f9f9f9');
+                        // تحديد الكلاس والحالة
+                        let cardClass = 'unanswered';
+                        let statusBadge = '<span class="status-badge unanswered">⚪ بدون إجابة</span>';
+
+                        if (isUserCorrect) {
+                            cardClass = 'correct';
+                            statusBadge = '<span class="status-badge correct">✅ إجابة صحيحة</span>';
+                        } else if (isUserAnswered) {
+                            cardClass = 'wrong';
+                            statusBadge = '<span class="status-badge wrong">❌ إجابة خاطئة</span>';
+                        }
 
                         // بناء الخيارات
                         let optionsHtml = '';
                         q.options.forEach((optText, optIdx) => {
-                            let optionStyle = 'padding:12px 16px; margin-bottom:8px; border-radius:12px; border:1px solid #eee; display:flex; align-items:center; gap:10px; transition:0.3s;';
-                            
+                            let optionClass = 'option-row';
+                            let icon = '⚪';
+
                             if (optIdx === correctAnswerIndex) {
-                                optionStyle += ' background:#d4edda; border-color:#2a7a2a; font-weight:700; color:#155724;';
+                                optionClass += ' correct';
+                                icon = '✅';
                             } else if (optIdx === userAnswerIndex) {
-                                optionStyle += ' background:#f8d7da; border-color:#a00; text-decoration:line-through; color:#721c24;';
-                            } else {
-                                optionStyle += ' background:#fff; color:#555;';
+                                optionClass += ' wrong';
+                                icon = '❌';
                             }
 
-                            optionsHtml += `<div style="${optionStyle}">
-                                <span style="font-size:18px;">${optIdx === correctAnswerIndex ? '✅' : (optIdx === userAnswerIndex ? '❌' : '⚪')}</span>
-                                <span style="font-size:14px;">${esc(optText)}</span>
-                            </div>`;
+                            optionsHtml += `
+                                <div class="${optionClass}">
+                                    <span style="font-size:16px;">${icon}</span>
+                                    <span>${esc(optText)}</span>
+                                </div>
+                            `;
                         });
 
                         // بناء الملاحظة
                         const noteHtml = q.note ? `
-                            <div style="background:#fffdf5; border:2px dashed #d4af37; border-radius:12px; padding:14px 18px; margin-top:15px; font-size:13px; color:#8a6f1d; line-height:1.7; display:flex; align-items:flex-start; gap:10px; box-shadow: 0 2px 8px rgba(212,175,55,0.1);">
-                                <span style="font-size:18px; flex-shrink:0;">📝</span>
+                            <div class="note-box">
+                                <span class="note-icon">📝</span>
                                 <div>
-                                    <strong style="display:block; margin-bottom:6px; color:#b8935a; font-size:14px;">ملاحظة:</strong>
+                                    <strong style="display:block; margin-bottom:6px; color:#b8935a;">ملاحظة:</strong>
                                     ${esc(q.note)}
                                 </div>
                             </div>
                         ` : '';
 
                         answersReviewHtml += `
-                            <div style="background:${questionBgColor}; border:2px solid ${questionBorderColor}; border-radius:16px; padding:20px; margin-bottom:18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px; border-bottom:1px dashed #eee; padding-bottom:12px;">
-                                    <span style="font-weight:900; color:#3b0a0a; font-size:16px;">السؤال ${idx + 1}</span>
-                                    <div style="display:flex; gap:8px;">
-                                        <span style="font-size:12px; font-weight:800; color:${isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888')}; background:#fff; padding:6px 14px; border-radius:50px; border:1px solid ${questionBorderColor};">
-                                            ${isUserCorrect ? '✅ إجابة صحيحة' : (isUserAnswered ? '❌ إجابة خاطئة' : '⚪ بدون إجابة')}
-                                        </span>
-                                    </div>
+                            <div class="question-card ${cardClass}">
+                                <div class="question-header">
+                                    <span class="q-number">السؤال ${idx + 1}</span>
+                                    <div>${statusBadge}</div>
                                 </div>
-                                <div style="font-size:15px; color:#333; margin-bottom:18px; line-height:1.8; font-weight:700;">${esc(q.q)}</div>
+                                <div class="question-text">${esc(q.q)}</div>
                                 <div>${optionsHtml}</div>
                                 ${noteHtml}
                             </div>
@@ -1929,26 +2088,20 @@
                     answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات (بيانات الاختبار غير متوفرة).</p>';
                 }
 
-                // ✅ بناء الواجهة النهائية
+                // ✅ 3. التجميع النهائي
                 resultDiv.innerHTML = `
-                    <div style="background:${isPassed ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)'}; padding:22px; border-radius:20px; border:2px solid ${isPassed ? '#2a7a2a' : '#a00'}; box-shadow: 0 8px 25px rgba(0,0,0,0.06);">
-                        <div style="text-align:center; margin-bottom:20px;">
-                            <div style="font-size:42px; margin-bottom:8px;">${isPassed ? '🎉' : '😔'}</div>
-                            <h3 style="color:${isPassed ? '#155724' : '#721c24'}; margin:0; font-size:22px; font-weight:900;">
-                                ${isPassed ? 'مبروك، نجحت!' : 'حاول مرة أخرى'}
-                            </h3>
-                        </div>
-
+                    <div class="exam-result-light">
                         ${statsHtml}
 
-                        <div style="background:#fff; border-radius:16px; padding:20px; margin-top:15px; border:1px solid #f0ede8;">
-                            <h4 style="margin:0 0 18px 0; font-size:16px; color:#3b0a0a; display:flex; align-items:center; gap:8px; border-bottom:2px solid #f4edd3; padding-bottom:12px;">
-                                📋 الإجابات
-                            </h4>
+                        <div class="answers-header">
+                            <span>الإجابات</span>
+                        </div>
+
+                        <div class="answers-list">
                             ${answersReviewHtml}
                         </div>
 
-                        <div style="margin-top:18px; padding-top:15px; border-top:1px dashed rgba(0,0,0,0.1); text-align:center; font-size:12px; color:#555; font-weight:600;">
+                        <div class="result-footer">
                             📅 ${att.gradedAt ? new Date(att.gradedAt.toDate()).toLocaleString('ar-EG') : '—'}
                         </div>
                     </div>
@@ -1974,7 +2127,7 @@
             try {
                 const examsSnap = await db.collection('exams').where('grade', '==', user.grade).get();
                 exams = examsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                
+
                 const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
                 bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             } catch(e) {
