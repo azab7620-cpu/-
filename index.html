@@ -769,6 +769,7 @@
             padding: 20px;
             border: 1px solid #f0ede8;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            text-align: right;
         }
         .exam-result-light .stats-grid {
             display: grid;
@@ -1947,7 +1948,69 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        //  📊 عرض نتيجة المحاولة بالتفصيل (نفس ترتيب الصورة - بألوان المنصة)
+        //  📊 دالة مشتركة لبناء عرض تفاصيل الإجابات (تُستخدم في مكانين)
+        // ═══════════════════════════════════════════════════════════
+        function buildDetailedAnswersHTML(examQuestions, studentAnswers, correctAnswersArr) {
+            let html = '';
+            examQuestions.forEach((q, idx) => {
+                const userAnswerIndex = studentAnswers ? studentAnswers[idx] : null;
+                const correctAnswerIndex = correctAnswersArr ? correctAnswersArr[idx] : null;
+
+                const isUserCorrect = userAnswerIndex === correctAnswerIndex && userAnswerIndex !== null && userAnswerIndex !== undefined;
+                const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
+
+                let cardClass = 'unanswered';
+                let statusBadge = '<span class="status-badge unanswered">⚪ بدون إجابة</span>';
+
+                if (isUserCorrect) {
+                    cardClass = 'correct';
+                    statusBadge = '<span class="status-badge correct">✅ إجابة صحيحة</span>';
+                } else if (isUserAnswered) {
+                    cardClass = 'wrong';
+                    statusBadge = '<span class="status-badge wrong">❌ إجابة خاطئة</span>';
+                }
+
+                let optionsHtml = '';
+                q.options.forEach((optText, optIdx) => {
+                    let optionClass = 'option-row';
+                    let icon = '⚪';
+                    if (optIdx === correctAnswerIndex) {
+                        optionClass += ' correct';
+                        icon = '✅';
+                    } else if (optIdx === userAnswerIndex) {
+                        optionClass += ' wrong';
+                        icon = '❌';
+                    }
+                    optionsHtml += `<div class="${optionClass}"><span style="font-size:16px;">${icon}</span><span>${esc(optText)}</span></div>`;
+                });
+
+                const noteHtml = q.note ? `
+                    <div class="note-box">
+                        <span class="note-icon">📝</span>
+                        <div>
+                            <strong style="display:block; margin-bottom:6px; color:#b8935a;">ملاحظة:</strong>
+                            ${esc(q.note)}
+                        </div>
+                    </div>
+                ` : '';
+
+                html += `
+                    <div class="question-card ${cardClass}">
+                        <div class="question-header">
+                            <span class="q-number">السؤال ${idx + 1}</span>
+                            <div>${statusBadge}</div>
+                        </div>
+                        <div class="question-text">${esc(q.q)}</div>
+                        <div>${optionsHtml}</div>
+                        ${noteHtml}
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  📊 عرض نتيجة المحاولة بالتفصيل (في تبويب درجاتي)
         // ═══════════════════════════════════════════════════════════
         async function showAttemptResult(attemptId) {
             const resultDiv = document.getElementById('attempt-result-' + attemptId);
@@ -1978,7 +2041,6 @@
                     return;
                 }
 
-                // جلب بيانات الاختبار الأصلي (الأسئلة والخيارات)
                 let examDoc = null;
                 try {
                     const examSnap = await db.collection('exams').doc(att.examId).get();
@@ -1993,7 +2055,6 @@
                 const unanswered = Number(att.unanswered) || 0;
                 const total = Number(att.totalQuestions) || (correct + wrong + unanswered);
 
-                // ✅ 1. بناء بطاقات الإحصائيات
                 const statsHtml = `
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -2015,92 +2076,26 @@
                     </div>
                 `;
 
-                // ✅ 2. بناء قسم "الإجابات" التفصيلي
                 let answersReviewHtml = '';
                 if (examDoc && examDoc.questions && Array.isArray(examDoc.questions) && att.studentAnswers && Array.isArray(att.studentAnswers)) {
-                    const correctAnswersArr = att.correctAnswers || [];
-
-                    examDoc.questions.forEach((q, idx) => {
-                        const userAnswerIndex = att.studentAnswers[idx];
-                        const correctAnswerIndex = correctAnswersArr[idx];
-
-                        const isUserCorrect = userAnswerIndex === correctAnswerIndex;
-                        const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
-
-                        // تحديد الكلاس والحالة
-                        let cardClass = 'unanswered';
-                        let statusBadge = '<span class="status-badge unanswered">⚪ بدون إجابة</span>';
-
-                        if (isUserCorrect) {
-                            cardClass = 'correct';
-                            statusBadge = '<span class="status-badge correct">✅ إجابة صحيحة</span>';
-                        } else if (isUserAnswered) {
-                            cardClass = 'wrong';
-                            statusBadge = '<span class="status-badge wrong">❌ إجابة خاطئة</span>';
-                        }
-
-                        // بناء الخيارات
-                        let optionsHtml = '';
-                        q.options.forEach((optText, optIdx) => {
-                            let optionClass = 'option-row';
-                            let icon = '⚪';
-
-                            if (optIdx === correctAnswerIndex) {
-                                optionClass += ' correct';
-                                icon = '✅';
-                            } else if (optIdx === userAnswerIndex) {
-                                optionClass += ' wrong';
-                                icon = '❌';
-                            }
-
-                            optionsHtml += `
-                                <div class="${optionClass}">
-                                    <span style="font-size:16px;">${icon}</span>
-                                    <span>${esc(optText)}</span>
-                                </div>
-                            `;
-                        });
-
-                        // بناء الملاحظة
-                        const noteHtml = q.note ? `
-                            <div class="note-box">
-                                <span class="note-icon">📝</span>
-                                <div>
-                                    <strong style="display:block; margin-bottom:6px; color:#b8935a;">ملاحظة:</strong>
-                                    ${esc(q.note)}
-                                </div>
-                            </div>
-                        ` : '';
-
-                        answersReviewHtml += `
-                            <div class="question-card ${cardClass}">
-                                <div class="question-header">
-                                    <span class="q-number">السؤال ${idx + 1}</span>
-                                    <div>${statusBadge}</div>
-                                </div>
-                                <div class="question-text">${esc(q.q)}</div>
-                                <div>${optionsHtml}</div>
-                                ${noteHtml}
-                            </div>
-                        `;
-                    });
+                    answersReviewHtml = buildDetailedAnswersHTML(
+                        examDoc.questions,
+                        att.studentAnswers,
+                        att.correctAnswers || []
+                    );
                 } else {
                     answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات (بيانات الاختبار غير متوفرة).</p>';
                 }
 
-                // ✅ 3. التجميع النهائي
                 resultDiv.innerHTML = `
                     <div class="exam-result-light">
                         ${statsHtml}
-
                         <div class="answers-header">
                             <span>الإجابات</span>
                         </div>
-
                         <div class="answers-list">
                             ${answersReviewHtml}
                         </div>
-
                         <div class="result-footer">
                             📅 ${att.gradedAt ? new Date(att.gradedAt.toDate()).toLocaleString('ar-EG') : '—'}
                         </div>
@@ -3019,19 +3014,65 @@
                 const showResult = (data) => {
                     if (!data) return;
                     const scorePct = Number(data.score) || 0;
+                    const correct = Number(data.correctCount) || 0;
+                    const wrong = Number(data.wrongCount) || 0;
+                    const unanswered = Number(data.unanswered) || 0;
+                    const total = Number(data.totalQuestions) || (correct + wrong + unanswered);
 
                     document.getElementById('resultTitle').textContent =
                         scorePct >= 50 ? '🎉 مبروك، نجحت!' : '😔 حاول مرة أخرى';
 
-                    document.getElementById('resultDetails').innerHTML = `
-                        <p>الإجابات الصحيحة: <strong style="color:#2a7a2a;">${data.correctCount || 0}</strong></p>
-                        <p>الإجابات الخاطئة: <strong style="color:#a00;">${data.wrongCount || 0}</strong></p>
-                        <p>بدون إجابة: <strong style="color:#888;">${data.unanswered || 0}</strong></p>
-                        <p>نسبة النجاح: <strong style="color:#b8935a; font-size:22px;">${scorePct}%</strong></p>
-                        ${currentExam.oneTimeOnly ?
-                            '<p style="margin-top:10px; color:#8b0000; font-weight:800;">🔒 هذا الاختبار لمرة واحدة.</p>' : ''}
+                    // ✅ بطاقات الإحصائيات
+                    const statsHtml = `
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="value">${total}</div>
+                                <div class="label">عدد الأسئلة</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value">${scorePct}%</div>
+                                <div class="label">النسبة</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value">${correct}</div>
+                                <div class="label">إجابات صحيحة</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value">${wrong}</div>
+                                <div class="label">إجابات خاطئة</div>
+                            </div>
+                        </div>
                     `;
-                    document.getElementById('reviewAnswers').innerHTML = '';
+
+                    document.getElementById('resultDetails').innerHTML = statsHtml;
+
+                    // ✅ بناء تفاصيل الإجابات (كل سؤال + الملاحظات)
+                    const correctAnswersArr = data.correctAnswers || [];
+                    let answersReviewHtml = '';
+
+                    if (currentExam && currentExam.questions && Array.isArray(currentExam.questions)) {
+                        answersReviewHtml = buildDetailedAnswersHTML(
+                            currentExam.questions,
+                            answers,
+                            correctAnswersArr
+                        );
+                    } else {
+                        answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات.</p>';
+                    }
+
+                    document.getElementById('reviewAnswers').innerHTML = `
+                        <div class="exam-result-light" style="margin-top:20px;">
+                            <div class="answers-header">
+                                <span>الإجابات</span>
+                            </div>
+                            <div class="answers-list">
+                                ${answersReviewHtml}
+                            </div>
+                            <div class="result-footer">
+                                ${currentExam.oneTimeOnly ? '🔒 هذا الاختبار لمرة واحدة.' : '📝 يمكنك مراجعة إجاباتك.'}
+                            </div>
+                        </div>
+                    `;
 
                     if (exitBtn) exitBtn.style.display = 'inline-block';
                 };
