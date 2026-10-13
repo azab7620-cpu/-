@@ -1835,22 +1835,30 @@
 
                 // ✅ بناء بطاقات الإحصائيات
                 const statsHtml = `
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-bottom:15px;">
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                            <div style="font-size:22px; font-weight:900; color:#b8935a;">${total}</div>
-                            <div style="font-size:11px; color:#666; margin-top:3px;">عدد الأسئلة</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-bottom:20px;">
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:#b8935a;">${total}</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">عدد الأسئلة</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                            <div style="font-size:22px; font-weight:900; color:#b8935a;">${correct} / ${total}</div>
-                            <div style="font-size:11px; color:#666; margin-top:3px;">المجموع</div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:#b8935a;">${correct} / ${total}</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">المجموع</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                            <div style="font-size:22px; font-weight:900; color:${isPassed ? '#2a7a2a' : '#a00'};">${score}%</div>
-                            <div style="font-size:11px; color:#666; margin-top:3px;">النسبة المئوية</div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:${isPassed ? '#2a7a2a' : '#a00'};">${score}%</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">النسبة المئوية</div>
                         </div>
-                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-                            <div style="font-size:22px; font-weight:900; color:#2a7a2a;">${correct}</div>
-                            <div style="font-size:11px; color:#666; margin-top:3px;">إجابات صحيحة</div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:#2a7a2a;">${correct}</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">إجابات صحيحة</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:#a00;">${wrong}</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">إجابات خاطئة</div>
+                        </div>
+                        <div style="background:#fff; padding:12px; border-radius:12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); border:1px solid #f0ede8;">
+                            <div style="font-size:20px; font-weight:900; color:#888;">${unanswered}</div>
+                            <div style="font-size:11px; color:#666; margin-top:4px; font-weight:700;">بدون إجابة</div>
                         </div>
                     </div>
                 `;
@@ -1874,31 +1882,46 @@
                         // بناء الخيارات
                         let optionsHtml = '';
                         q.options.forEach((optText, optIdx) => {
-                            let optionStyle = 'padding:10px 14px; margin-bottom:6px; border-radius:10px; border:1px solid #eee;';
-
+                            let optionStyle = 'padding:12px 16px; margin-bottom:8px; border-radius:12px; border:1px solid #eee; display:flex; align-items:center; gap:10px; transition:0.3s;';
+                            
                             if (optIdx === correctAnswerIndex) {
-                                optionStyle += ' background:#d4edda; border-color:#2a7a2a; font-weight:700;';
+                                optionStyle += ' background:#d4edda; border-color:#2a7a2a; font-weight:700; color:#155724;';
                             } else if (optIdx === userAnswerIndex) {
-                                optionStyle += ' background:#f8d7da; border-color:#a00; text-decoration:line-through;';
+                                optionStyle += ' background:#f8d7da; border-color:#a00; text-decoration:line-through; color:#721c24;';
+                            } else {
+                                optionStyle += ' background:#fff; color:#555;';
                             }
 
-                            optionsHtml += `<div style="${optionStyle} display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:16px;">${optIdx === correctAnswerIndex ? '✅' : (optIdx === userAnswerIndex ? '❌' : '⚪')}</span>
-                                <span>${esc(optText)}</span>
+                            optionsHtml += `<div style="${optionStyle}">
+                                <span style="font-size:18px;">${optIdx === correctAnswerIndex ? '✅' : (optIdx === userAnswerIndex ? '❌' : '⚪')}</span>
+                                <span style="font-size:14px;">${esc(optText)}</span>
                             </div>`;
                         });
 
-                        answersReviewHtml += `
-                            <div style="background:${questionBgColor}; border:2px solid ${questionBorderColor}; border-radius:14px; padding:15px; margin-bottom:12px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-                                    <span style="font-weight:800; color:#3b0a0a; font-size:14px;">السؤال ${idx + 1}</span>
-                                    <span style="font-size:12px; font-weight:700; color:${isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888')}; background:#fff; padding:4px 12px; border-radius:50px; border:1px solid ${questionBorderColor};">
-                                        ${isUserCorrect ? '✅ صحيحة' : (isUserAnswered ? '❌ خاطئة' : '⚪ بدون إجابة')}
-                                    </span>
+                        // بناء الملاحظة
+                        const noteHtml = q.note ? `
+                            <div style="background:#fffdf5; border:2px dashed #d4af37; border-radius:12px; padding:14px 18px; margin-top:15px; font-size:13px; color:#8a6f1d; line-height:1.7; display:flex; align-items:flex-start; gap:10px; box-shadow: 0 2px 8px rgba(212,175,55,0.1);">
+                                <span style="font-size:18px; flex-shrink:0;">📝</span>
+                                <div>
+                                    <strong style="display:block; margin-bottom:6px; color:#b8935a; font-size:14px;">ملاحظة:</strong>
+                                    ${esc(q.note)}
                                 </div>
-                                <div style="font-size:14px; color:#333; margin-bottom:12px; line-height:1.6;">${esc(q.q)}</div>
-                                ${q.note ? `<div style="background:#fffdf5; border:1px dashed #d4af37; border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; color:#8a6f1d;">📝 ${esc(q.note)}</div>` : ''}
+                            </div>
+                        ` : '';
+
+                        answersReviewHtml += `
+                            <div style="background:${questionBgColor}; border:2px solid ${questionBorderColor}; border-radius:16px; padding:20px; margin-bottom:18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px; border-bottom:1px dashed #eee; padding-bottom:12px;">
+                                    <span style="font-weight:900; color:#3b0a0a; font-size:16px;">السؤال ${idx + 1}</span>
+                                    <div style="display:flex; gap:8px;">
+                                        <span style="font-size:12px; font-weight:800; color:${isUserCorrect ? '#2a7a2a' : (isUserAnswered ? '#a00' : '#888')}; background:#fff; padding:6px 14px; border-radius:50px; border:1px solid ${questionBorderColor};">
+                                            ${isUserCorrect ? '✅ إجابة صحيحة' : (isUserAnswered ? '❌ إجابة خاطئة' : '⚪ بدون إجابة')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="font-size:15px; color:#333; margin-bottom:18px; line-height:1.8; font-weight:700;">${esc(q.q)}</div>
                                 <div>${optionsHtml}</div>
+                                ${noteHtml}
                             </div>
                         `;
                     });
@@ -1908,24 +1931,24 @@
 
                 // ✅ بناء الواجهة النهائية
                 resultDiv.innerHTML = `
-                    <div style="background:${isPassed ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)'}; padding:18px; border-radius:16px; border:2px solid ${isPassed ? '#2a7a2a' : '#a00'};">
-                        <div style="text-align:center; margin-bottom:15px;">
-                            <div style="font-size:36px; margin-bottom:6px;">${isPassed ? '🎉' : '😔'}</div>
-                            <h3 style="color:${isPassed ? '#155724' : '#721c24'}; margin:0; font-size:20px;">
+                    <div style="background:${isPassed ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)'}; padding:22px; border-radius:20px; border:2px solid ${isPassed ? '#2a7a2a' : '#a00'}; box-shadow: 0 8px 25px rgba(0,0,0,0.06);">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <div style="font-size:42px; margin-bottom:8px;">${isPassed ? '🎉' : '😔'}</div>
+                            <h3 style="color:${isPassed ? '#155724' : '#721c24'}; margin:0; font-size:22px; font-weight:900;">
                                 ${isPassed ? 'مبروك، نجحت!' : 'حاول مرة أخرى'}
                             </h3>
                         </div>
 
                         ${statsHtml}
 
-                        <div style="background:#fff; border-radius:14px; padding:15px; margin-top:10px;">
-                            <h4 style="margin:0 0 12px 0; font-size:15px; color:#3b0a0a; display:flex; align-items:center; gap:6px;">
+                        <div style="background:#fff; border-radius:16px; padding:20px; margin-top:15px; border:1px solid #f0ede8;">
+                            <h4 style="margin:0 0 18px 0; font-size:16px; color:#3b0a0a; display:flex; align-items:center; gap:8px; border-bottom:2px solid #f4edd3; padding-bottom:12px;">
                                 📋 الإجابات
                             </h4>
                             ${answersReviewHtml}
                         </div>
 
-                        <div style="margin-top:15px; padding-top:12px; border-top:1px dashed rgba(0,0,0,0.1); text-align:center; font-size:12px; color:#555;">
+                        <div style="margin-top:18px; padding-top:15px; border-top:1px dashed rgba(0,0,0,0.1); text-align:center; font-size:12px; color:#555; font-weight:600;">
                             📅 ${att.gradedAt ? new Date(att.gradedAt.toDate()).toLocaleString('ar-EG') : '—'}
                         </div>
                     </div>
