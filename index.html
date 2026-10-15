@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="نُورُ تَعْلِيمِ الأَزْهَرِ — منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر، ومتابعة دقيقة للتقدم.">
+    <meta name="theme-color" content="#3b0a0a">
+    <meta property="og:title" content="نُورُ تَعْلِيمِ الأَزْهَرِ">
+    <meta property="og:description" content="منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233b0a0a'/%3E%3Cpath d='M32 18c-5-3-12-3-17-1v27c5-2 12-2 17 1 5-3 12-3 17-1V17c-5-2-12-2-17 1z' fill='none' stroke='%23c9a961' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M32 18v27' stroke='%23c9a961' stroke-width='3'/%3E%3C/svg%3E">
     <title>نُورُ تَعْلِيمِ الأَزْهَرِ</title>
 
     <meta http-equiv="Content-Security-Policy" content="
@@ -769,7 +775,6 @@
             padding: 20px;
             border: 1px solid #f0ede8;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            text-align: right;
         }
         .exam-result-light .stats-grid {
             display: grid;
@@ -1181,14 +1186,73 @@
             .support-float-btn .support-text p { font-size: 9px; }
             .support-float-icon { width: 38px; height: 38px; font-size: 17px; }
         }
+        /* ═══ أيقونات SVG ═══ */
+        .ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .feature-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(59,10,10,0.08), rgba(201,169,97,0.18)); color: #3b0a0a; font-size: 30px; border: 1px solid rgba(201,169,97,0.3); }
+        body.dark-mode .feature-icon { color: #d4af37; background: rgba(212,175,55,0.1); }
+        .logo-icon .ico { width: 26px; height: 26px; stroke-width: 1.8; position: relative; z-index: 1; }
+        .support-float-icon .ico { width: 22px; height: 22px; }
+
+        /* ═══ Toast ═══ */
+        #toastHost { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; width: min(92vw, 420px); pointer-events: none; }
+        .toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; background: #fff; color: #333; border-radius: 14px; padding: 14px 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid #eee; border-right: 5px solid #b8935a; font-size: 13.5px; font-weight: 600; line-height: 1.7; animation: toastIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .toast.out { animation: toastOut 0.3s ease forwards; }
+        .toast.success { border-right-color: #2a7a2a; }
+        .toast.error { border-right-color: #b00020; }
+        .toast.warn { border-right-color: #d4af37; }
+        .toast .toast-ico { font-size: 20px; margin-top: 2px; }
+        .toast.success .toast-ico { color: #2a7a2a; }
+        .toast.error .toast-ico { color: #b00020; }
+        .toast.warn .toast-ico { color: #b8935a; }
+        .toast .toast-msg { flex: 1; white-space: pre-line; }
+        .toast .toast-x { background: none; border: none; cursor: pointer; color: #999; font-size: 16px; line-height: 1; padding: 2px; font-family: inherit; }
+        body.dark-mode .toast { background: #1e2a4a; color: #e0e0e0; border-color: #2a3a5a; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-16px) scale(0.96); } to { opacity: 1; transform: none; } }
+        @keyframes toastOut { to { opacity: 0; transform: translateY(-12px) scale(0.96); } }
+
+        /* ═══ روابط مساعدة ═══ */
+        .forgot-link { display: block; text-align: left; font-size: 12px; font-weight: 700; color: #8a6f1d; cursor: pointer; margin-top: -4px; margin-bottom: 4px; background: none; border: none; font-family: inherit; padding: 0; }
+        .forgot-link:hover { text-decoration: underline; }
+        .footer-legal { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+        .footer-legal a { color: #c9a961; font-size: 12px; cursor: pointer; text-decoration: none; }
+        .footer-legal a:hover { text-decoration: underline; }
+        .legal-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center; padding: 20px; }
+        .legal-box { background: #fff; color: #333; border-radius: 24px; max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 30px; border: 2px solid #c9a961; position: relative; }
+        .legal-box h3 { color: #3b0a0a; margin-bottom: 14px; font-size: 20px; }
+        .legal-box h5 { color: #3b0a0a; margin: 16px 0 6px; font-size: 14px; }
+        .legal-box p, .legal-box li { font-size: 13px; line-height: 1.9; color: #555; }
+        .legal-box ul { padding-right: 20px; }
+        .legal-close { position: absolute; top: 14px; left: 14px; width: 34px; height: 34px; border-radius: 50%; border: none; background: #3b0a0a; color: #c9a961; font-size: 16px; cursor: pointer; font-family: inherit; }
+        body.dark-mode .legal-box { background: var(--bg-card); color: var(--text-primary); }
+        body.dark-mode .legal-box h3, body.dark-mode .legal-box h5 { color: var(--gold); }
+        body.dark-mode .legal-box p, body.dark-mode .legal-box li { color: var(--text-secondary); }
+
+        .empty-state { text-align: center; padding: 30px 16px; color: #888; grid-column: 1 / -1; font-size: 13px; }
+        .btn-card:focus-visible, .btn-login:focus-visible, .btn-register:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid rgba(201,169,97,0.6); outline-offset: 2px; }
     </style>
 </head>
 <body>
 
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+            <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></symbol>
+            <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+            <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+            <symbol id="i-headset" viewBox="0 0 24 24"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+            <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+        </defs>
+    </svg>
+
+    <div id="toastHost" role="status" aria-live="polite"></div>
+
     <header>
         <div class="nav-container">
             <div class="logo-area" onclick="showHome()">
-                <div class="logo-icon">📖</div>
+                <div class="logo-icon"><svg class="ico"><use href="#i-book"/></svg></div>
                 <div class="logo-text">
                     <h1>نُورُ تَعْلِيمِ الأَزْهَرِ</h1>
                     <span>منصة الطالب الأزهري</span>
@@ -1234,10 +1298,10 @@
         <div class="section-container animate-fade">
             <div class="section-header"><span>لماذا نحن؟</span><h3>ليه نور تعليم الأزهر؟</h3><p>منصة متكاملة لطلاب الأزهر</p></div>
             <div class="card-grid">
-                <div class="card animate-scale"><div style="font-size:40px; margin-bottom:12px;">📦</div><h4>منهج شامل</h4><p>باقات مخصصة للمراجعات.</p></div>
-                <div class="card animate-scale delay-1"><div style="font-size:40px; margin-bottom:12px;">⭐</div><h4>جودة عالية</h4><p>محتوى يليق بتميز الطالب.</p></div>
-                <div class="card animate-scale delay-2"><div style="font-size:40px; margin-bottom:12px;">👨‍🏫</div><h4>مدرسين خبراء</h4><p>خبرة أكثر من 10 سنوات.</p></div>
-                <div class="card animate-scale delay-3"><div style="font-size:40px; margin-bottom:12px;">⏱️</div><h4>تعلم في أي وقت</h4><p>من موبايلك أو لابتوبك.</p></div>
+                <div class="card animate-scale"><div class="feature-icon"><svg class="ico"><use href="#i-layers"/></svg></div><h4>منهج شامل</h4><p>وحدات ومراجعات مرتبة حسب صفك الدراسي.</p></div>
+                <div class="card animate-scale delay-1"><div class="feature-icon"><svg class="ico"><use href="#i-award"/></svg></div><h4>جودة عالية</h4><p>محتوى منظم يليق بتميز طالب الأزهر.</p></div>
+                <div class="card animate-scale delay-2"><div class="feature-icon"><svg class="ico"><use href="#i-users"/></svg></div><h4>مدرسون متخصصون</h4><p>نخبة من المدرسين في مواد المنهج الأزهري.</p></div>
+                <div class="card animate-scale delay-3"><div class="feature-icon"><svg class="ico"><use href="#i-clock"/></svg></div><h4>تعلم في أي وقت</h4><p>من موبايلك أو لابتوبك، وقت ما يناسبك.</p></div>
             </div>
         </div>
         <div class="section-container animate-fade" id="teachersSection">
@@ -1321,7 +1385,7 @@
 
         <div class="detail-header animate-fade">
             <h2 id="detailCourseTitle">عنوان الكورس</h2>
-            <p>الترم الأول كامل مواد عربية - الصف الأول الثانوي</p>
+            <p id="detailCourseSub"></p>
             <div class="detail-progress">
                 <div class="progress-container" style="flex:1;">
                     <div class="progress-fill" id="detailProgressFill" style="width: 0%;"></div>
@@ -1470,6 +1534,7 @@
                         <form id="loginForm">
                             <div class="form-group-modern"><label>البريد الإلكتروني</label><div class="input-wrapper"><input type="email" id="loginEmailOrPhone" placeholder="example@email.com" required maxlength="200"><span class="input-icon-right">✉️</span></div></div>
                             <div class="form-group-modern"><label>كلمة المرور</label><div class="input-wrapper"><input type="password" id="loginPass" placeholder="كلمة المرور" required maxlength="100"><span class="input-icon-right">🔒</span><span class="input-icon-left" onclick="togglePassword('loginPass')">👁️</span></div></div>
+                            <button type="button" class="forgot-link" onclick="resetPassword()">نسيت كلمة المرور؟</button>
                             <button type="submit" id="loginSubmitBtn" class="btn-submit-modern">تسجيل الدخول ←</button>
                         </form>
                         <div class="auth-toggle-footer"><p>ليس لديك حساب؟</p><button class="btn-outline-toggle" onclick="switchAuthView('register')">إنشاء حساب جديد</button></div>
@@ -1508,15 +1573,19 @@
 
     <footer>
         <div class="footer-content">
-            <div class="footer-col"><h4>روابط سريعة</h4><ul><li><a onclick="showHome()">الرئيسية</a></li><li><a onclick="showHome()">المدرسون</a></li><li><a onclick="showHome()">الكورسات</a></li></ul></div>
-            <div class="footer-col"><h4>تواصل معنا</h4><div class="social-icons"><a href="https://wa.me/201113224591" target="_blank" rel="noopener noreferrer" class="social-icon">💬</a><a href="#" class="social-icon">🔵</a><a href="#" class="social-icon">▶</a></div><p style="margin-top:8px; color:#c9a961; font-size:12px;" dir="ltr">01113224591</p></div>
+            <div class="footer-col"><h4>روابط سريعة</h4><ul><li><a onclick="showHome()">الرئيسية</a></li><li><a onclick="scrollToSection('teachersSection')">المدرسون</a></li><li><a onclick="scrollToSection('coursesSection')">الكورسات</a></li><li><a onclick="scrollToSection('booksSection')">الكتب</a></li></ul></div>
+            <div class="footer-col"><h4>تواصل معنا</h4><div class="social-icons"><a href="https://wa.me/201113224591" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="واتساب"><svg class="ico" style="width:18px;height:18px"><use href="#i-headset"/></svg></a></div><p style="margin-top:8px; color:#c9a961; font-size:12px;" dir="ltr">01113224591</p></div>
             <div class="footer-col" style="text-align:left;"><h3>نُورُ تَعْلِيمِ الأَزْهَرِ</h3><p>محتوى تعليمي يليق بتميز طالب الأزهر</p><p style="color:#c9a961; font-weight:700;">مستقبلك يبدأ من هنا</p></div>
         </div>
         <div class="footer-bottom">
-            <p>© 2026 نُورُ تَعْلِيمِ الأَزْهَرِ</p>
+            <p>© 2026 نُورُ تَعْلِيمِ الأَزْهَرِ — جميع الحقوق محفوظة</p>
+            <div class="footer-legal">
+                <a onclick="openLegal('privacy')">سياسة الخصوصية</a>
+                <a onclick="openLegal('terms')">شروط الاستخدام</a>
+            </div>
             <div class="developer-credit">
                 <a href="https://wa.me/201024052857" target="_blank" rel="noopener noreferrer" class="dev-link">
-                    <img src="raheed-logo.jpg" alt="Raheed" class="dev-img" onerror="this.src='https://via.placeholder.com/45/3b0a0a/d4af37?text=R'">
+                    <img src="raheed-logo.jpg" alt="Raheed" class="dev-img" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 45 45%27%3E%3Crect width=%2745%27 height=%2745%27 fill=%27%233b0a0a%27/%3E%3Ctext x=%2722.5%27 y=%2730%27 font-size=%2722%27 text-anchor=%27middle%27 fill=%27%23d4af37%27 font-family=%27sans-serif%27%3ER%3C/text%3E%3C/svg%3E'">
                     <div class="dev-text">
                         تم التطوير بواسطة Raheed
                         <span>01024052857</span>
@@ -1526,12 +1595,19 @@
         </div>
     </footer>
 
+    <div id="legalModal" class="legal-modal" onclick="if(event.target===this)closeLegal()">
+        <div class="legal-box">
+            <button class="legal-close" onclick="closeLegal()" aria-label="إغلاق">✕</button>
+            <div id="legalContent"></div>
+        </div>
+    </div>
+
     <a href="https://wa.me/201113224591" target="_blank" rel="noopener noreferrer" class="support-float-btn">
         <div class="support-text">
             <h5>الدعم الفني</h5>
             <p>لو قابلتك مشكلة، احنا معاك</p>
         </div>
-        <div class="support-float-icon">🎧</div>
+        <div class="support-float-icon"><svg class="ico"><use href="#i-headset"/></svg></div>
     </a>
 
     <script>
@@ -1539,6 +1615,79 @@
         //  🌐 رابط Apps Script للتصحيح الفوري
         // ═══════════════════════════════════════════════════════════
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVlc4SxawsFDIojc8lc3ybK3XBrf57M6PT-JytVnEJGdSw2vSLyDmdOd3Hy1dPt9Wj/exec';
+
+        // ═══════════════════════════════════════════════════════════
+        //  Toast: يستبدل alert() بإشعارات منسقة
+        // ═══════════════════════════════════════════════════════════
+        function showToast(message, type) {
+            const host = document.getElementById('toastHost');
+            if (!host) return;
+            const msg = String(message || '');
+            if (!type) {
+                if (/^\s*(✅|🎉)/.test(msg)) type = 'success';
+                else if (/^\s*(❌|⛔)/.test(msg)) type = 'error';
+                else type = 'warn';
+            }
+            const icons = { success: '#i-check', error: '#i-alert', warn: '#i-info' };
+            const clean = msg.replace(/^\s*(✅|🎉|❌|⛔|⚠️|⏳|🔒|😔)\s*/, '');
+            const el = document.createElement('div');
+            el.className = 'toast ' + type;
+            const ico = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            ico.setAttribute('class', 'ico toast-ico');
+            const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            use.setAttribute('href', icons[type]);
+            ico.appendChild(use);
+            const text = document.createElement('div');
+            text.className = 'toast-msg';
+            text.textContent = clean;
+            const x = document.createElement('button');
+            x.className = 'toast-x';
+            x.setAttribute('aria-label', 'إغلاق');
+            x.textContent = '✕';
+            const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+            x.onclick = close;
+            el.append(ico, text, x);
+            host.appendChild(el);
+            setTimeout(close, type === 'error' ? 6500 : 4500);
+        }
+        window.alert = function(m) { showToast(m); };
+
+        // ═══════════════════════════════════════════════════════════
+        //  نسيت كلمة المرور + صفحات قانونية
+        // ═══════════════════════════════════════════════════════════
+        async function resetPassword() {
+            const email = document.getElementById('loginEmailOrPhone').value.trim();
+            if (!email) { showToast('اكتب بريدك الإلكتروني أولاً ثم اضغط "نسيت كلمة المرور".', 'warn'); return; }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showToast('✅ لو البريد مسجل عندنا، هيوصلك رابط لإعادة تعيين كلمة المرور.');
+            } catch (err) {
+                if (err.code === 'auth/invalid-email') showToast('❌ البريد الإلكتروني غير صحيح.');
+                else if (err.code === 'auth/too-many-requests') showToast('محاولات كثيرة، حاول لاحقاً.', 'warn');
+                else showToast('✅ لو البريد مسجل عندنا، هيوصلك رابط لإعادة تعيين كلمة المرور.');
+            }
+        }
+
+        const LEGAL_TEXT = {
+            privacy: `<h3>سياسة الخصوصية</h3>
+                <p>نحترم خصوصية طلابنا وأولياء أمورهم، ونوضح هنا باختصار كيف نتعامل مع بياناتكم.</p>
+                <h5>البيانات التي نجمعها</h5>
+                <ul><li>الاسم والبريد الإلكتروني وأرقام الهاتف (الطالب وولي الأمر).</li><li>المحافظة والمركز والمرحلة والصف الدراسي.</li><li>نتائج الاختبارات ونشاط الطالب داخل المنصة.</li></ul>
+                <h5>كيف نستخدمها</h5>
+                <p>نستخدم البيانات لتفعيل الحساب، وعرض المحتوى المناسب لصف الطالب، وتصحيح الاختبارات، والتواصل عند الحاجة. لا نبيع بياناتكم لأي طرف.</p>
+                <h5>البث المباشر</h5>
+                <p>عند تفعيل الكاميرا أو المايك أثناء البث يكون ذلك بإذن منك ويمكنك إيقافه في أي وقت.</p>
+                <h5>التواصل</h5>
+                <p>لأي استفسار أو طلب حذف بيانات تواصل معنا عبر الدعم الفني.</p>`,
+            terms: `<h3>شروط الاستخدام</h3>
+                <p>باستخدامك المنصة فإنك توافق على الشروط التالية:</p>
+                <ul><li>الحساب شخصي ولا يجوز مشاركته مع الآخرين.</li><li>المحتوى (فيديوهات وكتب واختبارات) مخصص للاستخدام الشخصي ولا يجوز نسخه أو إعادة نشره.</li><li>يمنع محاولة الغش أو العبث بالاختبارات أو بالمنصة.</li><li>يحق للإدارة إيقاف أي حساب يخالف هذه الشروط.</li><li>قد نقوم بتحديث المحتوى والشروط من وقت لآخر.</li></ul>`
+        };
+        function openLegal(kind) {
+            document.getElementById('legalContent').innerHTML = LEGAL_TEXT[kind] || '';
+            document.getElementById('legalModal').style.display = 'flex';
+        }
+        function closeLegal() { document.getElementById('legalModal').style.display = 'none'; }
 
         // ═══════════════════════════════════════════════════════════
         //  🔒 XSS Protection Helpers
@@ -1562,7 +1711,7 @@
         function safeUrl(u) {
             if (!u) return '#';
             const s = String(u).trim();
-            if (/^https?:\/\//i.test(s) || /^mailto:/i.test(s) || /^tel:/i.test(s) || s.startsWith('/')) return s;
+            if (/^https?:\/\//i.test(s) || /^mailto:/i.test(s) || /^tel:/i.test(s) || /^data:image\/(png|jpe?g|gif|webp|svg\+xml)/i.test(s) || s.startsWith('/')) return s;
             return '#';
         }
 
@@ -1831,8 +1980,7 @@
                     completedItems++;
                 }
             });
-            const progress = Math.round((completedItems / totalItems) * 100);
-            return progress > 0 ? progress : (Math.random() * 20 + 5).toFixed(0);
+            return Math.round((completedItems / totalItems) * 100);
         }
 
         function switchStudentTab(tabName, btnElement) {
@@ -1948,69 +2096,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        //  📊 دالة مشتركة لبناء عرض تفاصيل الإجابات (تُستخدم في مكانين)
-        // ═══════════════════════════════════════════════════════════
-        function buildDetailedAnswersHTML(examQuestions, studentAnswers, correctAnswersArr) {
-            let html = '';
-            examQuestions.forEach((q, idx) => {
-                const userAnswerIndex = studentAnswers ? studentAnswers[idx] : null;
-                const correctAnswerIndex = correctAnswersArr ? correctAnswersArr[idx] : null;
-
-                const isUserCorrect = userAnswerIndex === correctAnswerIndex && userAnswerIndex !== null && userAnswerIndex !== undefined;
-                const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
-
-                let cardClass = 'unanswered';
-                let statusBadge = '<span class="status-badge unanswered">⚪ بدون إجابة</span>';
-
-                if (isUserCorrect) {
-                    cardClass = 'correct';
-                    statusBadge = '<span class="status-badge correct">✅ إجابة صحيحة</span>';
-                } else if (isUserAnswered) {
-                    cardClass = 'wrong';
-                    statusBadge = '<span class="status-badge wrong">❌ إجابة خاطئة</span>';
-                }
-
-                let optionsHtml = '';
-                q.options.forEach((optText, optIdx) => {
-                    let optionClass = 'option-row';
-                    let icon = '⚪';
-                    if (optIdx === correctAnswerIndex) {
-                        optionClass += ' correct';
-                        icon = '✅';
-                    } else if (optIdx === userAnswerIndex) {
-                        optionClass += ' wrong';
-                        icon = '❌';
-                    }
-                    optionsHtml += `<div class="${optionClass}"><span style="font-size:16px;">${icon}</span><span>${esc(optText)}</span></div>`;
-                });
-
-                const noteHtml = q.note ? `
-                    <div class="note-box">
-                        <span class="note-icon">📝</span>
-                        <div>
-                            <strong style="display:block; margin-bottom:6px; color:#b8935a;">ملاحظة:</strong>
-                            ${esc(q.note)}
-                        </div>
-                    </div>
-                ` : '';
-
-                html += `
-                    <div class="question-card ${cardClass}">
-                        <div class="question-header">
-                            <span class="q-number">السؤال ${idx + 1}</span>
-                            <div>${statusBadge}</div>
-                        </div>
-                        <div class="question-text">${esc(q.q)}</div>
-                        <div>${optionsHtml}</div>
-                        ${noteHtml}
-                    </div>
-                `;
-            });
-            return html;
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        //  📊 عرض نتيجة المحاولة بالتفصيل (في تبويب درجاتي)
+        //  📊 عرض نتيجة المحاولة بالتفصيل (نفس ترتيب الصورة - بألوان المنصة)
         // ═══════════════════════════════════════════════════════════
         async function showAttemptResult(attemptId) {
             const resultDiv = document.getElementById('attempt-result-' + attemptId);
@@ -2041,6 +2127,7 @@
                     return;
                 }
 
+                // جلب بيانات الاختبار الأصلي (الأسئلة والخيارات)
                 let examDoc = null;
                 try {
                     const examSnap = await db.collection('exams').doc(att.examId).get();
@@ -2055,6 +2142,7 @@
                 const unanswered = Number(att.unanswered) || 0;
                 const total = Number(att.totalQuestions) || (correct + wrong + unanswered);
 
+                // ✅ 1. بناء بطاقات الإحصائيات
                 const statsHtml = `
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -2076,26 +2164,92 @@
                     </div>
                 `;
 
+                // ✅ 2. بناء قسم "الإجابات" التفصيلي
                 let answersReviewHtml = '';
                 if (examDoc && examDoc.questions && Array.isArray(examDoc.questions) && att.studentAnswers && Array.isArray(att.studentAnswers)) {
-                    answersReviewHtml = buildDetailedAnswersHTML(
-                        examDoc.questions,
-                        att.studentAnswers,
-                        att.correctAnswers || []
-                    );
+                    const correctAnswersArr = att.correctAnswers || [];
+
+                    examDoc.questions.forEach((q, idx) => {
+                        const userAnswerIndex = att.studentAnswers[idx];
+                        const correctAnswerIndex = correctAnswersArr[idx];
+
+                        const isUserCorrect = userAnswerIndex === correctAnswerIndex;
+                        const isUserAnswered = userAnswerIndex !== null && userAnswerIndex !== undefined;
+
+                        // تحديد الكلاس والحالة
+                        let cardClass = 'unanswered';
+                        let statusBadge = '<span class="status-badge unanswered">⚪ بدون إجابة</span>';
+
+                        if (isUserCorrect) {
+                            cardClass = 'correct';
+                            statusBadge = '<span class="status-badge correct">✅ إجابة صحيحة</span>';
+                        } else if (isUserAnswered) {
+                            cardClass = 'wrong';
+                            statusBadge = '<span class="status-badge wrong">❌ إجابة خاطئة</span>';
+                        }
+
+                        // بناء الخيارات
+                        let optionsHtml = '';
+                        q.options.forEach((optText, optIdx) => {
+                            let optionClass = 'option-row';
+                            let icon = '⚪';
+
+                            if (optIdx === correctAnswerIndex) {
+                                optionClass += ' correct';
+                                icon = '✅';
+                            } else if (optIdx === userAnswerIndex) {
+                                optionClass += ' wrong';
+                                icon = '❌';
+                            }
+
+                            optionsHtml += `
+                                <div class="${optionClass}">
+                                    <span style="font-size:16px;">${icon}</span>
+                                    <span>${esc(optText)}</span>
+                                </div>
+                            `;
+                        });
+
+                        // بناء الملاحظة
+                        const noteHtml = q.note ? `
+                            <div class="note-box">
+                                <span class="note-icon">📝</span>
+                                <div>
+                                    <strong style="display:block; margin-bottom:6px; color:#b8935a;">ملاحظة:</strong>
+                                    ${esc(q.note)}
+                                </div>
+                            </div>
+                        ` : '';
+
+                        answersReviewHtml += `
+                            <div class="question-card ${cardClass}">
+                                <div class="question-header">
+                                    <span class="q-number">السؤال ${idx + 1}</span>
+                                    <div>${statusBadge}</div>
+                                </div>
+                                <div class="question-text">${esc(q.q)}</div>
+                                <div>${optionsHtml}</div>
+                                ${noteHtml}
+                            </div>
+                        `;
+                    });
                 } else {
                     answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات (بيانات الاختبار غير متوفرة).</p>';
                 }
 
+                // ✅ 3. التجميع النهائي
                 resultDiv.innerHTML = `
                     <div class="exam-result-light">
                         ${statsHtml}
+
                         <div class="answers-header">
                             <span>الإجابات</span>
                         </div>
+
                         <div class="answers-list">
                             ${answersReviewHtml}
                         </div>
+
                         <div class="result-footer">
                             📅 ${att.gradedAt ? new Date(att.gradedAt.toDate()).toLocaleString('ar-EG') : '—'}
                         </div>
@@ -2139,7 +2293,7 @@
                             <div class="course-card-img">📚</div>
                             <div class="course-card-body">
                                 <h3>${esc(b.title)}</h3>
-                                <p>الترم الأول كامل مواد عربية - ${esc(b.grade)}</p>
+                                <p>${esc(b.grade)} • ${(b.items || []).length} عنصر</p>
                                 <div class="progress-container">
                                     <div class="progress-fill" style="width: ${progress}%;"></div>
                                 </div>
@@ -2193,6 +2347,7 @@
             const progress = calculateBundleProgress(bundle, currentUser);
 
             document.getElementById('detailCourseTitle').textContent = bundle.title;
+            document.getElementById('detailCourseSub').textContent = bundle.grade || '';
             document.getElementById('detailProgressFill').style.width = progress + '%';
             document.getElementById('detailProgressText').textContent = progress + '%';
 
@@ -2885,15 +3040,9 @@
             const qTextEl = document.getElementById('qTextDisplay');
             qTextEl.innerHTML = esc(q.q);
 
+            // الملاحظات لا تظهر أثناء الاختبار، بل تظهر فقط في صفحة النتيجة بعد التسليم
             const oldNote = document.getElementById('qNoteDisplay');
             if (oldNote) oldNote.remove();
-
-            if (q.note) {
-                const noteEl = document.createElement('div');
-                noteEl.id = 'qNoteDisplay';
-                noteEl.innerHTML = '<span class="note-icon">📝</span><span>' + esc(q.note) + '</span>';
-                qTextEl.parentNode.insertBefore(noteEl, qTextEl.nextSibling);
-            }
 
             document.getElementById('examProgressText').textContent = `السؤال ${currentQIndex + 1} من ${currentExam.questions.length}`;
             document.getElementById('progressFill').style.width = ((currentQIndex + 1) / currentExam.questions.length) * 100 + '%';
@@ -3014,65 +3163,19 @@
                 const showResult = (data) => {
                     if (!data) return;
                     const scorePct = Number(data.score) || 0;
-                    const correct = Number(data.correctCount) || 0;
-                    const wrong = Number(data.wrongCount) || 0;
-                    const unanswered = Number(data.unanswered) || 0;
-                    const total = Number(data.totalQuestions) || (correct + wrong + unanswered);
 
                     document.getElementById('resultTitle').textContent =
                         scorePct >= 50 ? '🎉 مبروك، نجحت!' : '😔 حاول مرة أخرى';
 
-                    // ✅ بطاقات الإحصائيات
-                    const statsHtml = `
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="value">${total}</div>
-                                <div class="label">عدد الأسئلة</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="value">${scorePct}%</div>
-                                <div class="label">النسبة</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="value">${correct}</div>
-                                <div class="label">إجابات صحيحة</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="value">${wrong}</div>
-                                <div class="label">إجابات خاطئة</div>
-                            </div>
-                        </div>
+                    document.getElementById('resultDetails').innerHTML = `
+                        <p>الإجابات الصحيحة: <strong style="color:#2a7a2a;">${data.correctCount || 0}</strong></p>
+                        <p>الإجابات الخاطئة: <strong style="color:#a00;">${data.wrongCount || 0}</strong></p>
+                        <p>بدون إجابة: <strong style="color:#888;">${data.unanswered || 0}</strong></p>
+                        <p>نسبة النجاح: <strong style="color:#b8935a; font-size:22px;">${scorePct}%</strong></p>
+                        ${currentExam.oneTimeOnly ?
+                            '<p style="margin-top:10px; color:#8b0000; font-weight:800;">🔒 هذا الاختبار لمرة واحدة.</p>' : ''}
                     `;
-
-                    document.getElementById('resultDetails').innerHTML = statsHtml;
-
-                    // ✅ بناء تفاصيل الإجابات (كل سؤال + الملاحظات)
-                    const correctAnswersArr = data.correctAnswers || [];
-                    let answersReviewHtml = '';
-
-                    if (currentExam && currentExam.questions && Array.isArray(currentExam.questions)) {
-                        answersReviewHtml = buildDetailedAnswersHTML(
-                            currentExam.questions,
-                            answers,
-                            correctAnswersArr
-                        );
-                    } else {
-                        answersReviewHtml = '<p style="text-align:center; color:#888; padding:20px;">⚠️ لا يمكن عرض تفاصيل الإجابات.</p>';
-                    }
-
-                    document.getElementById('reviewAnswers').innerHTML = `
-                        <div class="exam-result-light" style="margin-top:20px;">
-                            <div class="answers-header">
-                                <span>الإجابات</span>
-                            </div>
-                            <div class="answers-list">
-                                ${answersReviewHtml}
-                            </div>
-                            <div class="result-footer">
-                                ${currentExam.oneTimeOnly ? '🔒 هذا الاختبار لمرة واحدة.' : '📝 يمكنك مراجعة إجاباتك.'}
-                            </div>
-                        </div>
-                    `;
+                    document.getElementById('reviewAnswers').innerHTML = '';
 
                     if (exitBtn) exitBtn.style.display = 'inline-block';
                 };
