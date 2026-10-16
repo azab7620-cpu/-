@@ -290,15 +290,32 @@ async function renderBooks() {
 // ═══════════════════════════════════════════════════════════
 //  Student Dashboard
 // ═══════════════════════════════════════════════════════════
+
+/* ═══ شريط تقدم الحزمة ═══
+   ✅ يتحسب بناءً على:
+     • الاختبارات المُسلَّمة (completedExams)
+     • الفيديوهات اللي اتفرج عليها الطالب (watchedVideos)
+*/
 function calculateBundleProgress(bundle, user) {
     if (!bundle.items || bundle.items.length === 0) return 0;
     const totalItems = bundle.items.length;
     let completedItems = 0;
-    bundle.items.forEach(item => {
-        if (item.type === 'exam' && user.completedExams && user.completedExams.includes(item.examId)) {
+
+    const watched = user.watchedVideos || [];
+    const completedExams = user.completedExams || [];
+
+    bundle.items.forEach((item, idx) => {
+        // ✅ اختبار مكتمل
+        if (item.type === 'exam' && completedExams.includes(item.examId)) {
             completedItems++;
         }
+        // ✅ فيديو تمت مشاهدته
+        else if (item.type === 'video') {
+            const key = `${bundle.id}__${idx}`;
+            if (watched.includes(key)) completedItems++;
+        }
     });
+
     return Math.round((completedItems / totalItems) * 100);
 }
 
@@ -338,6 +355,43 @@ async function fetchCompletedExamIds(userId) {
     } catch (err) {
         console.error('خطأ في جلب الاختبارات المكتملة:', err);
         return [];
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📺 تتبع الفيديوهات المشاهدة (لتحديث شريط تقدم الحزم)
+   ═══════════════════════════════════════════════════════════ */
+async function fetchWatchedVideos(userId) {
+    try {
+        const snap = await db.collection('users').doc(userId).collection('watchedVideos').get();
+        return snap.docs.map(d => d.id);
+    } catch (err) {
+        console.error('خطأ في جلب الفيديوهات المشاهدة:', err);
+        return [];
+    }
+}
+
+async function markVideoAsWatched(bundleId, itemIndex) {
+    if (!currentUser) return;
+    const videoKey = `${bundleId}__${itemIndex}`;
+
+    // لو مشاهد قبل كده → متعملش حاجة
+    if ((currentUser.watchedVideos || []).includes(videoKey)) return;
+
+    try {
+        await db.collection('users').doc(currentUser.id)
+            .collection('watchedVideos').doc(videoKey)
+            .set({
+                bundleId: bundleId,
+                itemIndex: itemIndex,
+                watchedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+        // تحديث محلي
+        if (!currentUser.watchedVideos) currentUser.watchedVideos = [];
+        currentUser.watchedVideos.push(videoKey);
+    } catch (err) {
+        console.error('تعذر تسجيل المشاهدة:', err);
     }
 }
 
@@ -535,42 +589,105 @@ async function loadStudentDashboard(user) {
     document.getElementById('studentNameDash').textContent = user.name || '';
     document.getElementById('studentGradeDash').textContent = user.grade || '';
 
+    // ─── جلب البيانات بالتوازي ───
     await fetchStudentAttempts(user.id);
-    const completed = await fetchCompletedExamIds(user.id);
+
+    const [completed, watched] = await Promise.all([
+        fetchCompletedExamIds(user.id),
+        fetchWatchedVideos(user.id)
+    ]);
     currentUser.completedExams = completed;
+    currentUser.watchedVideos = watched;
 
     let exams = [];
     let bundles = [];
+    let courses = [];
+
     try {
         const examsSnap = await db.collection('exams').where('grade', '==', user.grade).get();
         exams = examsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
         const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
         bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // ✅ جلب المحاضرات المستقلة لنفس الصف
+        const coursesSnap = await db.collection('courses').where('grade', '==', user.grade).get();
+        courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch(e) {
-        console.error('خطأ في تحميل exams/bundles:', e);
+        console.error('خطأ في تحميل exams/bundles/courses:', e);
     }
 
+    // ═══════════════════════════════════════════════════════
+    //  📚 كورساتي: حزم + فيديوهات جوه الحزم + محاضرات مستقلة
+    // ═══════════════════════════════════════════════════════
     const coursesGrid = document.getElementById('studentCoursesGrid');
-    if (bundles.length) {
-        coursesGrid.innerHTML = bundles.map((b, idx) => {
-            const progress = calculateBundleProgress(b, user);
-            return `
-                <div class="course-card animate-scale" style="animation-delay:${idx*0.1}s;">
-                    <div class="course-card-img">📚</div>
+    const allCards = [];
+
+    // (1) الحزم (كروت مع شريط تقدم)
+    bundles.forEach((b, idx) => {
+        const progress = calculateBundleProgress(b, user);
+        allCards.push(`
+            <div class="course-card animate-scale" style="animation-delay:${idx*0.05}s;">
+                <div class="course-card-img">📚</div>
+                <div class="course-card-body">
+                    <h3>${esc(b.title)}</h3>
+                    <p>${esc(b.grade)} • ${(b.items || []).length} عنصر</p>
+                    <div class="progress-container"><div class="progress-fill" style="width: ${progress}%;"></div></div>
+                    <span class="progress-text">${progress}% مكتمل</span>
+                    <button type="button" class="btn-continue" data-action="open-bundle" data-bundle-id="${attr(b.id)}">كمل التعلم 🚀</button>
+                </div>
+            </div>
+        `);
+    });
+
+    // (2) الفيديوهات اللي جوه الحزم (كروت منفصلة)
+    bundles.forEach(b => {
+        (b.items || []).forEach((item, idx) => {
+            if (item.type !== 'video') return;
+            const key = `${b.id}__${idx}`;
+            const isWatched = currentUser.watchedVideos.includes(key);
+            allCards.push(`
+                <div class="course-card animate-scale course-card-mini ${isWatched ? 'watched' : ''}">
+                    <div class="course-card-img course-card-img-video">${isWatched ? '✅' : '🎬'}</div>
                     <div class="course-card-body">
-                        <h3>${esc(b.title)}</h3>
-                        <p>${esc(b.grade)} • ${(b.items || []).length} عنصر</p>
-                        <div class="progress-container"><div class="progress-fill" style="width: ${progress}%;"></div></div>
-                        <span class="progress-text">${progress}% مكتمل</span>
-                        <button type="button" class="btn-continue" data-action="open-bundle" data-bundle-id="${attr(b.id)}">كمل التعلم 🚀</button>
+                        <h3>${esc(item.title)}</h3>
+                        <p class="course-card-sub">📦 من داخل: ${esc(b.title)}</p>
+                        <button type="button" class="btn-continue" data-action="open-video"
+                                data-link="${attr(item.link || '')}"
+                                data-title="${attr(item.title || '')}"
+                                data-bundle-id="${attr(b.id)}"
+                                data-item-index="${idx}">
+                            ${isWatched ? '✅ شوهد — مشاهدة مرة أخرى' : '▶️ مشاهدة الآن'}
+                        </button>
                     </div>
                 </div>
-            `;
-        }).join('');
-    } else {
-        coursesGrid.innerHTML = '<p style="color:#888; text-align:center; grid-column:1/-1;">لا توجد كورسات متاحة لصفك حالياً.</p>';
-    }
+            `);
+        });
+    });
 
+    // (3) المحاضرات المستقلة
+    courses.forEach(c => {
+        allCards.push(`
+            <div class="course-card animate-scale">
+                <div class="course-card-img">📹</div>
+                <div class="course-card-body">
+                    <h3>${esc(c.title)}</h3>
+                    <p>${esc(c.grade)} • محاضرة مستقلة</p>
+                    <button type="button" class="btn-continue" data-action="open-video"
+                            data-link="${attr(c.link || '')}"
+                            data-title="${attr(c.title || '')}">
+                        ▶️ مشاهدة
+                    </button>
+                </div>
+            </div>
+        `);
+    });
+
+    coursesGrid.innerHTML = allCards.length
+        ? allCards.join('')
+        : '<p style="color:#888; text-align:center; grid-column:1/-1;">لا توجد كورسات متاحة لصفك حالياً.</p>';
+
+    // ─── الاختبارات ───
     const studentExamsList = document.getElementById('studentExamsList');
     if (exams.length) {
         studentExamsList.innerHTML = exams.map(ex => {
@@ -593,6 +710,7 @@ async function loadStudentDashboard(user) {
         studentExamsList.innerHTML = '<p style="color:#888;">لا توجد اختبارات لصفك بعد.</p>';
     }
 
+    // ─── المدرسون ───
     const teachers = await getTeachersPublic();
     document.getElementById('studentTeachersGrid').innerHTML = teachers.length
         ? teachers.map(t => `
@@ -613,8 +731,13 @@ async function openBundle(bundleId) {
     if (!bundleSnap.exists) return;
     const bundle = { id: bundleSnap.id, ...bundleSnap.data() };
 
-    const completed = await fetchCompletedExamIds(currentUser.id);
+    // ✅ جلب المحاولات والفيديوهات المشاهدة معاً
+    const [completed, watched] = await Promise.all([
+        fetchCompletedExamIds(currentUser.id),
+        fetchWatchedVideos(currentUser.id)
+    ]);
     currentUser.completedExams = completed;
+    currentUser.watchedVideos = watched;
 
     currentBundle = bundle;
     const progress = calculateBundleProgress(bundle, currentUser);
@@ -636,7 +759,7 @@ async function openBundle(bundleId) {
                     <span>▼</span>
                 </summary>
                 <div class="unit-content">
-                    ${bundle.items.map(item => {
+                    ${bundle.items.map((item, _idx) => {
                         if (item.type === 'exam') {
                             const alreadyTaken = completed.includes(item.examId);
                             if (alreadyTaken) {
@@ -650,12 +773,16 @@ async function openBundle(bundleId) {
                                 <button type="button" class="btn-item-action exam" data-action="start-exam" data-exam-id="${attr(item.examId)}">ابدأ الاختبار</button>
                             </div>`;
                         } else if (item.type === 'video') {
+                            const watchedKey = `${bundle.id}__${_idx}`;
+                            const isWatched = (currentUser.watchedVideos || []).includes(watchedKey);
                             return `<div class="unit-item">
-                                <span class="unit-item-title">🎬 ${esc(item.title)}</span>
+                                <span class="unit-item-title">${isWatched ? '✅' : '🎬'} ${esc(item.title)}</span>
                                 <button type="button" class="btn-item-action" data-action="open-video"
                                         data-link="${attr(item.link || '')}"
                                         data-title="${attr(item.title || '')}"
-                                        style="border:none;">مشاهدة</button>
+                                        data-bundle-id="${attr(bundle.id)}"
+                                        data-item-index="${_idx}"
+                                        style="border:none;">${isWatched ? 'شوهد ✓' : 'مشاهدة'}</button>
                             </div>`;
                         } else {
                             return `<div class="unit-item">
@@ -1528,7 +1655,29 @@ function handleActionClick(e) {
         case 'open-bundle': e.preventDefault(); openBundle(el.dataset.bundleId); break;
         case 'back-to-dashboard': e.preventDefault(); backToDashboard(); break;
         case 'start-exam': e.preventDefault(); startExam(el.dataset.examId); break;
-        case 'open-video': e.preventDefault(); openVideoModal(el.dataset.link, el.dataset.title); break;
+
+        /* ═══ ✅ فتح الفيديو + تسجيل المشاهدة لو كان جوه حزمة ═══ */
+        case 'open-video':
+            e.preventDefault();
+            openVideoModal(el.dataset.link, el.dataset.title);
+            if (el.dataset.bundleId && el.dataset.itemIndex !== undefined && el.dataset.itemIndex !== '') {
+                const bundleId = el.dataset.bundleId;
+                const itemIdx = parseInt(el.dataset.itemIndex, 10);
+                markVideoAsWatched(bundleId, itemIdx).then(() => {
+                    // لو إحنا جوه تفاصيل نفس الحزمة → حدّث الشريط مباشرة
+                    if (currentBundle && currentBundle.id === bundleId) {
+                        const newProgress = calculateBundleProgress(currentBundle, currentUser);
+                        const fill = document.getElementById('detailProgressFill');
+                        const text = document.getElementById('detailProgressText');
+                        if (fill) fill.style.width = newProgress + '%';
+                        if (text) text.textContent = newProgress + '%';
+                        // إعادة رسم الوحدة عشان تتظهر ✓
+                        setTimeout(() => openBundle(bundleId), 300);
+                    }
+                });
+            }
+            break;
+
         case 'show-attempt': e.preventDefault(); showAttemptResult(el.dataset.attemptId); break;
         case 'prev-question': e.preventDefault(); prevQuestion(); break;
         case 'next-question': e.preventDefault(); handleNextOrFinish(); break;
