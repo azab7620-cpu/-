@@ -683,14 +683,83 @@
         .btn-start-exam { background: linear-gradient(135deg, #c9a961, #8a6f1d); color: #fff; padding: 10px 28px; border-radius: 50px; border: none; font-weight: 900; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(184,147,90,0.3); font-size: 13px; font-family: inherit; }
         .btn-start-exam:hover { filter: brightness(1.1); transform: scale(1.05); box-shadow: 0 6px 15px rgba(184,147,90,0.45); }
 
-        .teacher-card { background: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 6px 15px rgba(0,0,0,0.04); border: 1px solid #f0ede8; transition: 0.3s; }
-        .teacher-card:hover { transform: translateY(-4px); box-shadow: 0 12px 25px rgba(0,0,0,0.08); }
-        .teacher-card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 3px solid var(--gold); padding: 2px; }
-        .teacher-card h5 { color: var(--maroon); font-size: 15px; margin-bottom: 4px; }
-        .teacher-card p { color: #666; font-size: 12px; }
-        body.dark-mode .teacher-card { background: var(--bg-card); }
+        /* ═══════════════════════════════════════════════════════════
+           👨‍🏫 كارت المدرس - الشكل الجديد (صورة مستطيلة فوق + الاسم + التخصص)
+           ═══════════════════════════════════════════════════════════ */
+        .teacher-card {
+            background: #fff;
+            border-radius: 24px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border: 1px solid #f0ede8;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .teacher-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-color: var(--gold);
+        }
+        .teacher-card img {
+            width: 170px;
+            height: 220px;
+            border-radius: 16px;
+            object-fit: cover;
+            margin-bottom: 18px;
+            border: 3px solid var(--gold);
+            padding: 3px;
+            box-shadow: 0 6px 18px rgba(184,147,90,0.25);
+            background: #f8f6f2;
+        }
+        .teacher-card .avatar-placeholder {
+            width: 170px;
+            height: 220px;
+            border-radius: 16px;
+            background: #f8f6f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            margin-bottom: 18px;
+            border: 3px solid var(--gold);
+            padding: 3px;
+            box-shadow: 0 6px 18px rgba(184,147,90,0.25);
+            color: #b8935a;
+        }
+        .teacher-card h4,
+        .teacher-card h5 {
+            color: var(--maroon);
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .teacher-card p {
+            color: #777;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .teacher-card .btn-card {
+            margin-top: 0;
+        }
+        body.dark-mode .teacher-card { background: var(--bg-card); border-color: var(--border-color); }
+        body.dark-mode .teacher-card h4,
         body.dark-mode .teacher-card h5 { color: var(--gold); }
         body.dark-mode .teacher-card p { color: var(--text-secondary); }
+        body.dark-mode .teacher-card .avatar-placeholder { background: var(--bg-secondary); }
+        body.dark-mode .teacher-card img { background: var(--bg-secondary); }
+
+        @media (max-width: 600px) {
+            .teacher-card img,
+            .teacher-card .avatar-placeholder {
+                width: 140px;
+                height: 180px;
+            }
+        }
 
         .back-home { color: var(--maroon); text-decoration: none; font-weight: 700; cursor: pointer; display: inline-block; margin-bottom: 20px; transition: color 0.3s; font-size: 14px; padding: 6px 0; }
         .back-home:hover { color: var(--gold-dark); transform: translateX(-5px); }
@@ -1374,7 +1443,7 @@
             <div id="tab-platform" class="student-tab-content animate-fade delay-2" style="display:none;">
                 <div class="dash-block">
                     <h4>👨‍🏫 مدرسينا</h4>
-                    <div class="card-grid" id="studentTeachersGrid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));"></div>
+                    <div class="card-grid" id="studentTeachersGrid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"></div>
                 </div>
             </div>
         </div>
@@ -1807,6 +1876,23 @@
             }, 100);
         }
 
+        // ═══════════════════════════════════════════════════════════
+        //  👨‍🏫 عرض المدرسين (الشكل الجديد: صورة مستطيلة فوق + الاسم + التخصص)
+        // ═══════════════════════════════════════════════════════════
+        function buildTeacherCardHTML(t, i) {
+            const imgHTML = t.image
+                ? `<img src="${esc(safeUrl(t.image))}" alt="${esc(t.name)}">`
+                : `<div class="avatar-placeholder">👨‍🏫</div>`;
+            return `
+                <div class="teacher-card animate-scale" style="animation-delay:${i*0.1}s;">
+                    ${imgHTML}
+                    <h4>${esc(t.name)}</h4>
+                    <p>${esc(t.specialty || 'مدرس')}</p>
+                    <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
+                </div>
+            `;
+        }
+
         async function renderTeachers() {
             const grid = document.getElementById('teachersGrid');
             if (!grid) return;
@@ -1816,14 +1902,7 @@
                 try {
                     const teachers = JSON.parse(cached);
                     if (teachers.length) {
-                        grid.innerHTML = teachers.map((t, i) => `
-                            <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
-                                <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
-                                <h4>${esc(t.name)}</h4>
-                                <p>${esc(t.specialty || 'مدرس')}</p>
-                                <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
-                            </div>
-                        `).join('');
+                        grid.innerHTML = teachers.map((t, i) => buildTeacherCardHTML(t, i)).join('');
                     }
                 } catch(e) {}
             }
@@ -1831,14 +1910,9 @@
             try {
                 const teachers = await getTeachersPublic();
                 localStorage.setItem('cache_teachers', JSON.stringify(teachers));
-                grid.innerHTML = teachers.length ? teachers.map((t, i) => `
-                    <div class="card animate-scale" style="animation-delay:${i*0.1}s;">
-                        <div style="font-size:50px;">${t.image ? `<img src="${esc(safeUrl(t.image))}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid #b8935a;padding:2px;" alt="">` : '👨‍🏫'}</div>
-                        <h4>${esc(t.name)}</h4>
-                        <p>${esc(t.specialty || 'مدرس')}</p>
-                        <a onclick="showAuthPage('login')" class="btn-card">شوف الكورسات</a>
-                    </div>
-                `).join('') : '<p>لا يوجد مدرسون.</p>';
+                grid.innerHTML = teachers.length
+                    ? teachers.map((t, i) => buildTeacherCardHTML(t, i)).join('')
+                    : '<p>لا يوجد مدرسون.</p>';
             } catch(e) {
                 console.error('renderTeachers:', e);
                 if (!cached) grid.innerHTML = '<p>لا يوجد مدرسون.</p>';
@@ -2329,10 +2403,19 @@
                 studentExamsList.innerHTML = '<p style="color:#888;">لا توجد اختبارات لصفك بعد.</p>';
             }
 
+            // ⬇️ عرض المدرسين في لوحة الطالب (الشكل الجديد - صورة مستطيلة فوق)
             const teachers = await getTeachersPublic();
-            document.getElementById('studentTeachersGrid').innerHTML = teachers.map(t => `
-                <div class="teacher-card">${t.image ? `<img src="${esc(safeUrl(t.image))}" alt="">` : ''}<h5>${esc(t.name)}</h5><p>${esc(t.specialty || '')}</p></div>
-            `).join('');
+            document.getElementById('studentTeachersGrid').innerHTML = teachers.length
+                ? teachers.map(t => `
+                    <div class="teacher-card">
+                        ${t.image
+                            ? `<img src="${esc(safeUrl(t.image))}" alt="${esc(t.name)}">`
+                            : `<div class="avatar-placeholder">👨‍🏫</div>`}
+                        <h5>${esc(t.name)}</h5>
+                        <p>${esc(t.specialty || '')}</p>
+                    </div>
+                `).join('')
+                : '<p style="color:#888; text-align:center; grid-column:1/-1;">لا يوجد مدرسون بعد.</p>';
         }
 
         async function openBundle(bundleId) {
@@ -3040,7 +3123,6 @@
             const qTextEl = document.getElementById('qTextDisplay');
             qTextEl.innerHTML = esc(q.q);
 
-            // الملاحظات لا تظهر أثناء الاختبار، بل تظهر فقط في صفحة النتيجة بعد التسليم
             const oldNote = document.getElementById('qNoteDisplay');
             if (oldNote) oldNote.remove();
 
