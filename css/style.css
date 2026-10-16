@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    🎨 نُورُ تَعْلِيمِ الأَزْهَرِ — ملف الأنماط الرئيسي
    🌙 Dark Mode محايد مريح للعين (Neutral Comfort)
-   ✨ نسخة كاملة محسّنة
+   ✨ نسخة كاملة محسّنة + كروت الفيديوهات من جوه الحزم
    ═══════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
@@ -738,6 +738,46 @@ body.dark-mode .btn-continue {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   📺 كروت الفيديوهات الجديدة (من جوه الحزم + محاضرات مستقلة)
+   ═══════════════════════════════════════════════════════════ */
+
+/* كارت الفيديو من جوه حزمة — نسخة مصغّرة */
+.course-card-mini .course-card-img-video {
+    background: linear-gradient(135deg, #1e5a8a, #2a4260);
+    color: #fff;
+    font-size: 38px;
+}
+
+/* كارت الفيديو بعد المشاهدة — أخضر */
+.course-card-mini.watched .course-card-img-video {
+    background: linear-gradient(135deg, #2a7a2a, #1f5c1f);
+}
+
+/* النص الفرعي اللي يوضح من أي حزمة */
+.course-card-sub {
+    font-size: 11px !important;
+    color: #8a6f1d !important;
+    font-weight: 700 !important;
+    background: rgba(201, 169, 97, 0.12);
+    padding: 4px 10px;
+    border-radius: 30px;
+    display: inline-block;
+    margin-bottom: 10px !important;
+}
+
+/* Dark Mode للكروت الجديدة */
+body.dark-mode .course-card-mini .course-card-img-video {
+    background: linear-gradient(135deg, #3a5a7a, #2a4260);
+}
+body.dark-mode .course-card-mini.watched .course-card-img-video {
+    background: linear-gradient(135deg, #4a7a4a, #355c35);
+}
+body.dark-mode .course-card-sub {
+    color: var(--gold-soft) !important;
+    background: rgba(201, 169, 97, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
    📖 تفاصيل الكورس
    ═══════════════════════════════════════════════════════════ */
 .course-detail-view { display: none; max-width: 900px; margin: 15px auto; padding: 0 18px; }
@@ -1185,6 +1225,7 @@ body.dark-mode .student-media-controls button.off {
     to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade { animation: fadeInUp 0.7s ease forwards; }
+.animate-scale { animation: fadeInUp 0.6s ease both; }
 .delay-1 { animation-delay: 0.1s; }
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
