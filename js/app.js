@@ -609,18 +609,19 @@ async function loadStudentDashboard(user) {
         const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
         bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // ✅ ملاحظة: مش بنجيب المحاضرات المستقلة للطالب — الطالب يشوفها من جوه الحزم فقط
+        // ✅ ملاحظة: مش بنجيب المحاضرات المستقلة ولا الفيديوهات المنفصلة للطالب
+        // الطالب يشوف الحزم فقط، ويدخل جواها لمشاهدة الفيديوهات
     } catch(e) {
         console.error('خطأ في تحميل exams/bundles:', e);
     }
 
     // ═══════════════════════════════════════════════════════
-    //  📚 كورساتي: حزم + فيديوهات جوه الحزم فقط
+    //  📚 كورساتي: الحزم فقط (بدون كروت فيديوهات منفصلة)
     // ═══════════════════════════════════════════════════════
     const coursesGrid = document.getElementById('studentCoursesGrid');
     const allCards = [];
 
-    // (1) الحزم (كروت مع شريط تقدم)
+    // (1) الحزم فقط (كروت مع شريط تقدم)
     bundles.forEach((b, idx) => {
         const progress = calculateBundleProgress(b, user);
         allCards.push(`
@@ -635,31 +636,6 @@ async function loadStudentDashboard(user) {
                 </div>
             </div>
         `);
-    });
-
-    // (2) الفيديوهات اللي جوه الحزم (كروت منفصلة)
-    bundles.forEach(b => {
-        (b.items || []).forEach((item, idx) => {
-            if (item.type !== 'video') return;
-            const key = `${b.id}__${idx}`;
-            const isWatched = currentUser.watchedVideos.includes(key);
-            allCards.push(`
-                <div class="course-card animate-scale course-card-mini ${isWatched ? 'watched' : ''}">
-                    <div class="course-card-img course-card-img-video">${isWatched ? '✅' : '🎬'}</div>
-                    <div class="course-card-body">
-                        <h3>${esc(item.title)}</h3>
-                        <p class="course-card-sub">📦 من داخل: ${esc(b.title)}</p>
-                        <button type="button" class="btn-continue" data-action="open-video"
-                                data-link="${attr(item.link || '')}"
-                                data-title="${attr(item.title || '')}"
-                                data-bundle-id="${attr(b.id)}"
-                                data-item-index="${idx}">
-                            ${isWatched ? '✅ شوهد — مشاهدة مرة أخرى' : '▶️ مشاهدة الآن'}
-                        </button>
-                    </div>
-                </div>
-            `);
-        });
     });
 
     coursesGrid.innerHTML = allCards.length
