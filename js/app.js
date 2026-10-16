@@ -1790,15 +1790,7 @@ async function handleRegisterSubmit(e) {
         });
         dataSaved = true;
 
-        // ✅ إرسال إيميل تأكيد البريد الإلكتروني
-        try {
-            await cred.user.sendEmailVerification();
-            console.log('✅ تم إرسال رابط التفعيل إلى:', email);
-        } catch (emailErr) {
-            console.warn('⚠️ فشل إرسال إيميل التفعيل:', emailErr);
-        }
-
-        alert('✅ تم إنشاء الحساب بنجاح!\n\n📧 تم إرسال رابط التفعيل إلى بريدك الإلكتروني.\n\n⚠️ لو مش لاقي الإيميل، ابص في مجلد Spam أو Junk.\n\n📌 بعد التفعيل، يرجى انتظار تفعيل حسابك من الإدارة.');
+        alert('✅ تم إنشاء الحساب بنجاح!\n\n📌 يرجى انتظار تفعيل حسابك من الإدارة.\n\n⏳ بعد التفعيل، هتقدر تسجل دخولك عادي.');
         switchAuthView('login');
         document.getElementById('registerForm').reset();
     } catch (err) {
@@ -1844,44 +1836,8 @@ async function handleLoginSubmit(e) {
     btn.textContent = 'جاري تسجيل الدخول...';
 
     try {
-        const cred = await auth.signInWithEmailAndPassword(email, password);
-        const fbUser = cred.user;
-
-        // ✅ التحقق من تفعيل البريد الإلكتروني
-        if (!fbUser.emailVerified) {
-            // ✅ showConfirm بدل confirm
-            const resend = await showConfirm(
-                '⚠️ لم يتم تفعيل بريدك الإلكتروني بعد.\n\n' +
-                'افتح بريدك (' + fbUser.email + ') واضغط على رابط التفعيل.\n\n' +
-                '(لو مش لاقي الإيميل، ابص في مجلد Spam)\n\n' +
-                'هل تريد إعادة إرسال رابط التفعيل الآن؟',
-                {
-                    title: 'تفعيل البريد الإلكتروني',
-                    icon: '📧',
-                    okText: 'إعادة الإرسال',
-                    cancelText: 'لاحقاً'
-                }
-            );
-
-            if (resend) {
-                try {
-                    await fbUser.sendEmailVerification();
-                    alert('✅ تم إرسال رابط التفعيل مرة أخرى.\n\nافحص بريدك الإلكتروني.');
-                } catch (resendErr) {
-                    console.error('❌ فشل إعادة إرسال رابط التفعيل:', resendErr);
-                    if (resendErr.code === 'auth/too-many-requests') {
-                        alert('⚠️ محاولات كثيرة. انتظر دقيقة وحاول تاني.');
-                    } else {
-                        alert('⚠️ فشل إعادة الإرسال. حاول لاحقاً.');
-                    }
-                }
-            }
-
-            await auth.signOut();
-            return;
-        }
-
-        // ✅ الإيميل متفعل — الـ Auth Observer هيكمل باقي الفحوصات
+        await auth.signInWithEmailAndPassword(email, password);
+        // ✅ تم تسجيل الدخول — الـ Auth Observer هيكمل باقي الفحوصات
     } catch (err) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
             alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.');
