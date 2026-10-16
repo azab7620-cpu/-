@@ -187,6 +187,27 @@ async function showStudentDetails(id) {
     if (!snap.exists) { alert('الطالب غير موجود.'); return; }
     const u = { id: snap.id, ...snap.data() };
 
+    // ✅✨ الجديد: حساب الإحصائيات لحظياً من examAttempts
+    let stats = { avg: 0, solved: 0, total: 0, pending: 0 };
+    try {
+        const attemptsSnap = await db.collection('examAttempts')
+            .where('studentId', '==', id)
+            .get();
+
+        const attempts = attemptsSnap.docs.map(d => d.data());
+        const graded = attempts.filter(a => a.pending !== true);
+        const pendingCount = attempts.filter(a => a.pending === true).length;
+
+        stats.solved = graded.length;
+        stats.pending = pendingCount;
+        stats.avg = graded.length
+            ? Math.round(graded.reduce((sum, a) => sum + (Number(a.score) || 0), 0) / graded.length)
+            : 0;
+        stats.total = attempts.reduce((sum, a) => sum + (Number(a.answersCount) || 0), 0);
+    } catch (err) {
+        console.warn('تعذر حساب الإحصائيات:', err);
+    }
+
     const initial = esc((u.name || '؟').charAt(0));
     const isOutside = u.isOutside ? 'نعم 🌍 (صفارة)' : 'لا 🇪🇬';
     const stageText = u.stage === 'primary' ? 'ابتدائي أزهري' :
@@ -222,8 +243,9 @@ async function showStudentDetails(id) {
         <div class="detail-row"><span>🎓 المرحلة</span><strong>${esc(stageText)}</strong></div>
         <div class="detail-row"><span>📚 الصف</span><strong id="currentGradeDisplay">${esc(u.grade) || '—'}</strong></div>
         <div class="detail-row"><span>📊 الحالة</span><strong style="color:${u.active ? 'green' : 'red'}">${u.active ? '✅ مفعل' : '⏳ معلق'}</strong></div>
-        <div class="detail-row"><span>📈 متوسط الدرجات</span><strong>${u.attempts ? (u.attempts.avg || 0) : 0}%</strong></div>
-        <div class="detail-row" style="border-bottom:none;"><span>✅ اختبارات محلولة</span><strong>${u.attempts ? (u.attempts.solved || 0) : 0}</strong></div>
+        <div class="detail-row"><span>📈 متوسط الدرجات</span><strong>${stats.avg}%</strong></div>
+        <div class="detail-row"><span>✅ اختبارات محلولة</span><strong>${stats.solved}</strong></div>
+        <div class="detail-row" style="border-bottom:none;"><span>⏳ اختبارات قيد التصحيح</span><strong>${stats.pending}</strong></div>
 
         <!-- ═══ قسم تغيير الصف ═══ -->
         <div class="change-grade-wrapper">
@@ -963,7 +985,6 @@ async function loadCoursesTable() {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">⏳ جاري التحميل...</td></tr>';
 
     try {
-        // ─── جلب المحاضرات المستقلة + الحزم ───
         const [courses, bundles] = await Promise.all([
             getCourses(),
             getBundles()
@@ -971,7 +992,6 @@ async function loadCoursesTable() {
 
         const rows = [];
 
-        // (1) المحاضرات المستقلة
         courses.forEach((c, idx) => {
             rows.push(`
                 <tr>
@@ -992,7 +1012,6 @@ async function loadCoursesTable() {
             `);
         });
 
-        // (2) الفيديوهات اللي جوه الحزم
         bundles.forEach(b => {
             (b.items || []).forEach((item, itemIdx) => {
                 if (item.type !== 'video') return;
@@ -1017,7 +1036,6 @@ async function loadCoursesTable() {
             });
         });
 
-        // عرض النتيجة
         if (!rows.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#888;">📭 لا توجد محاضرات — أضف محاضرة أو فيديو داخل حزمة</td></tr>';
             return;
@@ -1059,7 +1077,6 @@ async function deleteBundleVideo(bundleId, itemIndex, videoTitle) {
             return;
         }
 
-        // حذف الفيديو من المصفوفة
         const newItems = items.filter((_, i) => i !== itemIndex);
 
         await ref.update({ items: newItems });
@@ -1152,6 +1169,11 @@ async function deleteExamAndAttempts(examId, examTitle) {
             }
             if (inBatch > 0) await batch.commit();
         }
+
+        // ✅ حذف الـ _private subcollection الأول (لو موجودة)
+        try {
+            await db.collection('exams').doc(examId).collection('_private').doc('key').delete();
+        } catch(e) { console.warn('_private cleanup:', e); }
 
         await db.collection('exams').doc(examId).delete();
 
