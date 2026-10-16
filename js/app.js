@@ -601,7 +601,6 @@ async function loadStudentDashboard(user) {
 
     let exams = [];
     let bundles = [];
-    let courses = [];
 
     try {
         const examsSnap = await db.collection('exams').where('grade', '==', user.grade).get();
@@ -610,15 +609,13 @@ async function loadStudentDashboard(user) {
         const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
         bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // ✅ جلب المحاضرات المستقلة لنفس الصف
-        const coursesSnap = await db.collection('courses').where('grade', '==', user.grade).get();
-        courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // ✅ ملاحظة: مش بنجيب المحاضرات المستقلة للطالب — الطالب يشوفها من جوه الحزم فقط
     } catch(e) {
-        console.error('خطأ في تحميل exams/bundles/courses:', e);
+        console.error('خطأ في تحميل exams/bundles:', e);
     }
 
     // ═══════════════════════════════════════════════════════
-    //  📚 كورساتي: حزم + فيديوهات جوه الحزم + محاضرات مستقلة
+    //  📚 كورساتي: حزم + فيديوهات جوه الحزم فقط
     // ═══════════════════════════════════════════════════════
     const coursesGrid = document.getElementById('studentCoursesGrid');
     const allCards = [];
@@ -663,24 +660,6 @@ async function loadStudentDashboard(user) {
                 </div>
             `);
         });
-    });
-
-    // (3) المحاضرات المستقلة
-    courses.forEach(c => {
-        allCards.push(`
-            <div class="course-card animate-scale">
-                <div class="course-card-img">📹</div>
-                <div class="course-card-body">
-                    <h3>${esc(c.title)}</h3>
-                    <p>${esc(c.grade)} • محاضرة مستقلة</p>
-                    <button type="button" class="btn-continue" data-action="open-video"
-                            data-link="${attr(c.link || '')}"
-                            data-title="${attr(c.title || '')}">
-                        ▶️ مشاهدة
-                    </button>
-                </div>
-            </div>
-        `);
     });
 
     coursesGrid.innerHTML = allCards.length
