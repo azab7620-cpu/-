@@ -503,7 +503,6 @@ async function toggleStudent(id) {
 }
 
 async function deleteStudent(id) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟', {
         title: 'حذف طالب',
         icon: '🗑️',
@@ -538,7 +537,6 @@ async function loadBundlesTable() {
 }
 
 async function deleteBundle(id) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذه الوحدة؟', {
         title: 'حذف وحدة',
         icon: '🗑️',
@@ -952,9 +950,11 @@ async function saveFullExam() {
     const boxes = document.querySelectorAll('.question-box-generator');
     if (!boxes.length) { alert('قم بتوليد الأسئلة أولاً'); return; }
     if (!title || !grade) { alert('أدخل العنوان واختر الصف'); return; }
+    if (title.length > 200) { alert('⚠️ عنوان الاختبار يجب أن يكون أقل من 200 حرف.'); return; }
 
     const questionsPublic = [];
     const answersPrivate  = [];
+    const seenQuestions = new Set();
 
     for (let i = 0; i < boxes.length; i++) {
         const box = boxes[i];
@@ -965,10 +965,48 @@ async function saveFullExam() {
         const qNote = qNoteEl ? qNoteEl.value.trim() : '';
         const qType = box.getAttribute('data-qtype') || 'mcq';
 
-        if (!q || opts.includes('')) { alert('يرجى ملء السؤال رقم ' + (i + 1)); return; }
+        // ═══════════════════════════════════════════════════════
+        //  ✅ التحقق من نص السؤال
+        // ═══════════════════════════════════════════════════════
+        if (!q) { alert('⚠️ السؤال رقم ' + (i + 1) + ' فاضي.'); return; }
+        if (q.length < 3) { alert('⚠️ نص السؤال رقم ' + (i + 1) + ' قصير جداً.'); return; }
+        if (q.length > 500) { alert('⚠️ نص السؤال رقم ' + (i + 1) + ' طويل جداً (الحد الأقصى 500 حرف).'); return; }
+        if (seenQuestions.has(q)) { alert('⚠️ السؤال رقم ' + (i + 1) + ' مكرر مع سؤال سابق.'); return; }
+        seenQuestions.add(q);
 
+        // ═══════════════════════════════════════════════════════
+        //  ✅ التحقق من الخيارات
+        // ═══════════════════════════════════════════════════════
+        if (opts.length < 2) { alert('⚠️ السؤال رقم ' + (i + 1) + ' محتاج على الأقل خيارين.'); return; }
+        if (opts.some(o => !o)) { alert('⚠️ فيه خيار فاضي في السؤال رقم ' + (i + 1) + '.'); return; }
+        if (opts.some(o => o.length > 200)) { alert('⚠️ أحد الخيارات في السؤال رقم ' + (i + 1) + ' طويل جداً.'); return; }
+
+        // ✅ منع تكرار الخيارات
+        const uniqueOpts = new Set(opts);
+        if (uniqueOpts.size !== opts.length) {
+            alert('⚠️ فيه خيارات مكررة في السؤال رقم ' + (i + 1) + '.');
+            return;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  ✅ التحقق من الإجابة الصحيحة
+        // ═══════════════════════════════════════════════════════
+        if (isNaN(correct) || correct < 0 || correct >= opts.length) {
+            alert('⚠️ الإجابة الصحيحة في السؤال رقم ' + (i + 1) + ' غير صحيحة.');
+            return;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  ✅ التحقق من الملاحظة
+        // ═══════════════════════════════════════════════════════
         const questionObj = { q, options: opts, type: qType };
-        if (qNote) questionObj.note = qNote;
+        if (qNote) {
+            if (qNote.length > 300) {
+                alert('⚠️ ملاحظة السؤال رقم ' + (i + 1) + ' طويلة جداً (الحد الأقصى 300 حرف).');
+                return;
+            }
+            questionObj.note = qNote;
+        }
 
         questionsPublic.push(questionObj);
         answersPrivate.push(correct);
@@ -1077,7 +1115,6 @@ async function loadCoursesTable() {
 }
 
 async function deleteCourse(id) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm('حذف هذه المحاضرة؟', {
         title: 'حذف محاضرة',
         icon: '🗑️',
@@ -1092,7 +1129,6 @@ async function deleteCourse(id) {
 }
 
 async function deleteBundleVideo(bundleId, itemIndex, videoTitle) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm(
         `⚠️ هل أنت متأكد من حذف الفيديو "${videoTitle}" من الحزمة؟\n\nالحزمة نفسها هتفضل موجودة.`,
         {
@@ -1150,7 +1186,6 @@ async function loadBooksTable() {
 }
 
 async function deleteBook(id) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm('حذف هذا الكتاب؟', {
         title: 'حذف كتاب',
         icon: '📚',
@@ -1180,7 +1215,6 @@ async function loadTeachersTable() {
 }
 
 async function deleteTeacher(id) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm('حذف هذا المدرس؟', {
         title: 'حذف مدرس',
         icon: '👨‍🏫',
@@ -1214,7 +1248,6 @@ async function loadExamsTable() {
 }
 
 async function deleteExamAndAttempts(examId, examTitle) {
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm(
         `⚠️ هل أنت متأكد من حذف الاختبار "${examTitle}"؟\n\nسيتم حذف كل محاولات الطلاب المرتبطة به أيضاً.`,
         {
@@ -1885,7 +1918,6 @@ async function stopMyStreamFromList(docId, isCurrentSession) {
         ? `⚠️ هل أنت متأكد من إيقاف بثك الحالي؟\n\nسيتم فصل كل الطلاب المتصلين.`
         : `⚠️ ده بث من جلسة تانية (أو متبقي في السيرفر).\n\nهل تريد إيقافه؟`;
 
-    // ✅ showConfirm بدل confirm
     const ok = await showConfirm(confirmMsg, {
         title: 'إيقاف البث',
         icon: '⏹️',
@@ -1960,7 +1992,6 @@ async function checkMyExistingStream() {
 
         const count = myStreams.length;
 
-        // ✅ showConfirm بدل confirm
         const choice = await showConfirm(
             `⚠️ لديك ${count} بث نشط من جلسة سابقة:\n\n` +
             `هل تريد إيقافها كلها الآن؟\n` +
