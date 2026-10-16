@@ -193,7 +193,6 @@ async function showStudentDetails(id) {
                       u.stage === 'preparatory' ? 'إعدادي أزهري' :
                       u.stage === 'secondary' ? 'ثانوي أزهري' : (u.stage || 'غير محدد');
 
-    // ─── بناء قائمة الصفوف مرتبة حسب المرحلة ───
     const gradesMap = {
         'ابتدائي': ['الأول ابتدائي','الثاني ابتدائي','الثالث ابتدائي','الرابع ابتدائي','الخامس ابتدائي','السادس ابتدائي'],
         'إعدادي': ['الأول إعدادي','الثاني إعدادي','الثالث إعدادي'],
@@ -270,7 +269,6 @@ function closeStudentModal() {
    🔄 تغيير صف الطالب + تصفير كل حاجة
    ═══════════════════════════════════════════════════════════ */
 
-// إظهار قسم تغيير الصف
 function revealGradeChange() {
     const section = document.getElementById('changeGradeSection');
     const btn = document.querySelector('.btn-change-grade-reveal');
@@ -283,7 +281,6 @@ function revealGradeChange() {
     if (btn) btn.style.display = 'none';
 }
 
-// إلغاء تغيير الصف
 function cancelGradeChange() {
     const section = document.getElementById('changeGradeSection');
     const btn = document.querySelector('.btn-change-grade-reveal');
@@ -293,7 +290,6 @@ function cancelGradeChange() {
     if (select) select.value = '';
 }
 
-// تنفيذ تغيير الصف فعلياً + تصفير كل حاجة
 async function changeStudentGrade(studentId) {
     const selectEl = document.getElementById('changeGradeSelect');
     if (!selectEl) return;
@@ -322,7 +318,6 @@ async function changeStudentGrade(studentId) {
             return;
         }
 
-        // تأكيد أول
         const confirmMsg =
             `⚠️⚠️ تحذير هام ⚠️⚠️\n\n` +
             `أنت على وشك تغيير صف الطالب وإعادة تعيين كل بياناته:\n\n` +
@@ -342,21 +337,18 @@ async function changeStudentGrade(studentId) {
 
         if (!confirm(confirmMsg)) return;
 
-        // تأكيد ثاني (حماية إضافية)
         const doubleConfirm = confirm(
             `🔒 تأكيد نهائي\n\n` +
             `اضغط OK لتأكيد حذف كل بيانات "${studentName}" وتحويله لصف "${newGrade}"`
         );
         if (!doubleConfirm) return;
 
-        // تعطيل الزر
         const btn = document.querySelector('[data-action="change-student-grade"]');
         if (btn) {
             btn.disabled = true;
             btn.textContent = '⏳ جاري المعالجة...';
         }
 
-        // ═══ 1. حذف كل examAttempts بتاعت الطالب ═══
         let attemptsDeleted = 0;
         try {
             const attemptsSnap = await db.collection('examAttempts')
@@ -385,7 +377,6 @@ async function changeStudentGrade(studentId) {
             console.warn('⚠️ فشل حذف بعض المحاولات:', err);
         }
 
-        // ═══ 2. حذف كل completedExams subcollection ═══
         let completedDeleted = 0;
         try {
             const completedSnap = await userRef.collection('completedExams').get();
@@ -411,7 +402,6 @@ async function changeStudentGrade(studentId) {
             console.warn('⚠️ فشل حذف completedExams:', err);
         }
 
-        // ═══ 3. تحديث بيانات الطالب ═══
         await userRef.update({
             grade: newGrade,
             attempts: {
@@ -427,7 +417,6 @@ async function changeStudentGrade(studentId) {
             resetCount: firebase.firestore.FieldValue.increment(1)
         });
 
-        // إشعار نجاح
         const successMsg =
             `✅ تم تغيير الصف بنجاح!\n\n` +
             `👤 ${studentName}\n` +
@@ -961,24 +950,128 @@ async function saveFullExam() {
 // ═══════════════════════════════════════════════════════════
 //  📋 الجداول
 // ═══════════════════════════════════════════════════════════
+
+/* ═══════════════════════════════════════════════════════════
+   📹 جدول المحاضرات — يعرض:
+     (1) المحاضرات المستقلة (courses collection)
+     (2) الفيديوهات اللي جوه الحزم (bundles.items[].type === 'video')
+   ═══════════════════════════════════════════════════════════ */
 async function loadCoursesTable() {
-    const courses = await getCourses();
     const tbody = document.getElementById('coursesTableBody');
-    tbody.innerHTML = courses.length ? courses.map((c, idx) => `
-        <tr>
-            <td>${idx+1}</td>
-            <td><strong>${esc(c.title)}</strong></td>
-            <td>${esc(c.grade)}</td>
-            <td>${c.link ? 'موجود' : 'لا يوجد'}</td>
-            <td><button type="button" data-action="delete-course" data-course-id="${attr(c.id)}" class="btn-card btn-danger">🗑️</button></td>
-        </tr>
-    `).join('') : '<tr><td colspan="5">لا توجد محاضرات</td></tr>';
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">⏳ جاري التحميل...</td></tr>';
+
+    try {
+        // ─── جلب المحاضرات المستقلة + الحزم ───
+        const [courses, bundles] = await Promise.all([
+            getCourses(),
+            getBundles()
+        ]);
+
+        const rows = [];
+
+        // (1) المحاضرات المستقلة
+        courses.forEach((c, idx) => {
+            rows.push(`
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>
+                        <strong>${esc(c.title)}</strong>
+                        <div style="margin-top:6px;">
+                            <span style="background:#2a7a2a; color:#fff; padding:3px 10px; border-radius:50px; font-size:10px; font-weight:700;">📹 محاضرة مستقلة</span>
+                            ${c.showInHome ? '<span style="background:#d4af37; color:#3b0a0a; padding:3px 10px; border-radius:50px; font-size:10px; font-weight:700; margin-right:4px;">🌐 في الرئيسية</span>' : ''}
+                        </div>
+                    </td>
+                    <td>${esc(c.grade)}</td>
+                    <td>${c.link ? '<span style="color:#2a7a2a; font-weight:700;">✓ موجود</span>' : '<span style="color:#a00;">✗ لا يوجد</span>'}</td>
+                    <td>
+                        <button type="button" data-action="delete-course" data-course-id="${attr(c.id)}" class="btn-card btn-danger" title="حذف المحاضرة">🗑️</button>
+                    </td>
+                </tr>
+            `);
+        });
+
+        // (2) الفيديوهات اللي جوه الحزم
+        bundles.forEach(b => {
+            (b.items || []).forEach((item, itemIdx) => {
+                if (item.type !== 'video') return;
+                rows.push(`
+                    <tr>
+                        <td>
+                            <span style="background:#1e5a8a; color:#fff; padding:4px 10px; border-radius:8px; font-size:11px; font-weight:700;">📦</span>
+                        </td>
+                        <td>
+                            <strong>${esc(item.title)}</strong>
+                            <div style="margin-top:6px;">
+                                <span style="background:#1e5a8a; color:#fff; padding:3px 10px; border-radius:50px; font-size:10px; font-weight:700;">📦 من حزمة: ${esc(b.title)}</span>
+                            </div>
+                        </td>
+                        <td>${esc(b.grade)}</td>
+                        <td>${item.link ? '<span style="color:#2a7a2a; font-weight:700;">✓ موجود</span>' : '<span style="color:#a00;">✗ لا يوجد</span>'}</td>
+                        <td>
+                            <button type="button" data-action="delete-bundle-video" data-bundle-id="${attr(b.id)}" data-item-index="${itemIdx}" data-video-title="${attr(item.title)}" class="btn-card btn-delete" title="حذف الفيديو من الحزمة">🗑️</button>
+                        </td>
+                    </tr>
+                `);
+            });
+        });
+
+        // عرض النتيجة
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#888;">📭 لا توجد محاضرات — أضف محاضرة أو فيديو داخل حزمة</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.join('');
+
+    } catch (err) {
+        console.error('خطأ في تحميل المحاضرات:', err);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#a00;">❌ حدث خطأ أثناء التحميل</td></tr>';
+    }
 }
 
 async function deleteCourse(id) {
     if (!confirm('حذف هذه المحاضرة؟')) return;
     try { await db.collection('courses').doc(id).delete(); loadCoursesTable(); populateBundleSelects(); }
     catch (err) { console.error(err); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🗑️ حذف فيديو من داخل حزمة
+   ═══════════════════════════════════════════════════════════ */
+async function deleteBundleVideo(bundleId, itemIndex, videoTitle) {
+    if (!confirm(`⚠️ هل أنت متأكد من حذف الفيديو "${videoTitle}" من الحزمة؟\n\nالحزمة نفسها هتفضل موجودة.`)) return;
+
+    try {
+        const ref = db.collection('bundles').doc(bundleId);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            alert('❌ الحزمة غير موجودة.');
+            return;
+        }
+
+        const data = snap.data();
+        const items = data.items || [];
+
+        if (itemIndex < 0 || itemIndex >= items.length) {
+            alert('❌ الفيديو غير موجود في الحزمة.');
+            return;
+        }
+
+        // حذف الفيديو من المصفوفة
+        const newItems = items.filter((_, i) => i !== itemIndex);
+
+        await ref.update({ items: newItems });
+
+        alert(`✅ تم حذف الفيديو "${videoTitle}" من الحزمة.`);
+        loadCoursesTable();
+        loadBundlesTable();
+
+    } catch (err) {
+        console.error('❌ خطأ في حذف الفيديو:', err);
+        alert('❌ حدث خطأ: ' + (err.message || ''));
+    }
 }
 
 async function loadBooksTable() {
@@ -1834,6 +1927,14 @@ function handleActionClick(e) {
 
         case 'delete-bundle': e.preventDefault(); deleteBundle(el.dataset.bundleId); break;
         case 'delete-course': e.preventDefault(); deleteCourse(el.dataset.courseId); break;
+        case 'delete-bundle-video':
+            e.preventDefault();
+            deleteBundleVideo(
+                el.dataset.bundleId,
+                parseInt(el.dataset.itemIndex, 10),
+                el.dataset.videoTitle
+            );
+            break;
         case 'delete-book': e.preventDefault(); deleteBook(el.dataset.bookId); break;
         case 'delete-teacher': e.preventDefault(); deleteTeacher(el.dataset.teacherId); break;
         case 'delete-exam': e.preventDefault(); deleteExamAndAttempts(el.dataset.examId, el.dataset.examTitle); break;
@@ -1856,7 +1957,6 @@ function handleActionClick(e) {
 //  🎯 Static Listeners
 // ═══════════════════════════════════════════════════════════
 function attachStaticListeners() {
-    // Search input
     const searchInput = document.getElementById('studentSearchInput');
     if (searchInput) {
         let timer;
@@ -1866,32 +1966,27 @@ function attachStaticListeners() {
         });
     }
 
-    // Item type / source type
     const itemType = document.getElementById('itemType');
     if (itemType) itemType.addEventListener('change', toggleItemFields);
 
     const sourceType = document.getElementById('sourceType');
     if (sourceType) sourceType.addEventListener('change', toggleSourceFields);
 
-    // Teacher image preview
     const teacherImageFile = document.getElementById('teacherImageFile');
     if (teacherImageFile) teacherImageFile.addEventListener('change', function() { previewTeacherImage(this); });
 
-    // Permission toggles
     const permAllCameras = document.getElementById('permAllCameras');
     if (permAllCameras) permAllCameras.addEventListener('change', saveGlobalPermissions);
 
     const permAllMics = document.getElementById('permAllMics');
     if (permAllMics) permAllMics.addEventListener('change', saveGlobalPermissions);
 
-    // Question type change delegation
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('q-type-select')) {
             changeQuestionType(e.target);
         }
     });
 
-    // Modal click outside
     const studentDetailsModal = document.getElementById('studentDetailsModal');
     if (studentDetailsModal) {
         studentDetailsModal.addEventListener('click', (e) => {
@@ -1940,6 +2035,5 @@ function initAdminPanel() {
     refreshMyStreamsCount();
     setInterval(refreshMyStreamsCount, 5000);
 
-    // Central event delegation
     document.addEventListener('click', handleActionClick);
 }
