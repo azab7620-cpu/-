@@ -357,11 +357,26 @@ async function changeStudentGrade(studentId) {
             `⚠️ هذا الإجراء لا يمكن التراجع عنه!\n\n` +
             `هل أنت متأكد تماماً؟`;
 
-        if (!confirm(confirmMsg)) return;
+        // ✅ showConfirm بدل confirm
+        const firstConfirm = await showConfirm(confirmMsg, {
+            title: '⚠️ تغيير صف الطالب',
+            icon: '🔄',
+            okText: 'متابعة',
+            cancelText: 'إلغاء',
+            danger: true
+        });
+        if (!firstConfirm) return;
 
-        const doubleConfirm = confirm(
+        const doubleConfirm = await showConfirm(
             `🔒 تأكيد نهائي\n\n` +
-            `اضغط OK لتأكيد حذف كل بيانات "${studentName}" وتحويله لصف "${newGrade}"`
+            `اضغط "تأكيد" لحذف كل بيانات "${studentName}" وتحويله لصف "${newGrade}"`,
+            {
+                title: '🔒 تأكيد نهائي',
+                icon: '⚠️',
+                okText: 'تأكيد نهائي',
+                cancelText: 'رجوع',
+                danger: true
+            }
         );
         if (!doubleConfirm) return;
 
@@ -488,7 +503,16 @@ async function toggleStudent(id) {
 }
 
 async function deleteStudent(id) {
-    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟')) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟', {
+        title: 'حذف طالب',
+        icon: '🗑️',
+        okText: 'حذف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
+
     try {
         await db.collection('users').doc(id).delete();
         alert('✅ تم حذف الطالب.');
@@ -514,7 +538,16 @@ async function loadBundlesTable() {
 }
 
 async function deleteBundle(id) {
-    if (!confirm('⚠️ هل أنت متأكد من حذف هذه الوحدة؟')) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذه الوحدة؟', {
+        title: 'حذف وحدة',
+        icon: '🗑️',
+        okText: 'حذف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
+
     try {
         await db.collection('bundles').doc(id).delete();
         loadBundlesTable();
@@ -1044,13 +1077,33 @@ async function loadCoursesTable() {
 }
 
 async function deleteCourse(id) {
-    if (!confirm('حذف هذه المحاضرة؟')) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm('حذف هذه المحاضرة؟', {
+        title: 'حذف محاضرة',
+        icon: '🗑️',
+        okText: 'حذف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
+
     try { await db.collection('courses').doc(id).delete(); loadCoursesTable(); populateBundleSelects(); }
     catch (err) { console.error(err); }
 }
 
 async function deleteBundleVideo(bundleId, itemIndex, videoTitle) {
-    if (!confirm(`⚠️ هل أنت متأكد من حذف الفيديو "${videoTitle}" من الحزمة؟\n\nالحزمة نفسها هتفضل موجودة.`)) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm(
+        `⚠️ هل أنت متأكد من حذف الفيديو "${videoTitle}" من الحزمة؟\n\nالحزمة نفسها هتفضل موجودة.`,
+        {
+            title: 'حذف فيديو',
+            icon: '🎬',
+            okText: 'حذف',
+            cancelText: 'إلغاء',
+            danger: true
+        }
+    );
+    if (!ok) return;
 
     try {
         const ref = db.collection('bundles').doc(bundleId);
@@ -1097,7 +1150,16 @@ async function loadBooksTable() {
 }
 
 async function deleteBook(id) {
-    if (!confirm('حذف هذا الكتاب؟')) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm('حذف هذا الكتاب؟', {
+        title: 'حذف كتاب',
+        icon: '📚',
+        okText: 'حذف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
+
     try { await db.collection('books').doc(id).delete(); loadBooksTable(); populateBundleSelects(); }
     catch (err) { console.error(err); }
 }
@@ -1118,7 +1180,16 @@ async function loadTeachersTable() {
 }
 
 async function deleteTeacher(id) {
-    if (!confirm('حذف هذا المدرس؟')) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm('حذف هذا المدرس؟', {
+        title: 'حذف مدرس',
+        icon: '👨‍🏫',
+        okText: 'حذف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
+
     try { await db.collection('teachers').doc(id).delete(); loadTeachersTable(); }
     catch (err) { console.error(err); }
 }
@@ -1143,7 +1214,18 @@ async function loadExamsTable() {
 }
 
 async function deleteExamAndAttempts(examId, examTitle) {
-    if (!confirm(`⚠️ هل أنت متأكد من حذف الاختبار "${examTitle}"؟\n\nسيتم حذف كل محاولات الطلاب المرتبطة به أيضاً.`)) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm(
+        `⚠️ هل أنت متأكد من حذف الاختبار "${examTitle}"؟\n\nسيتم حذف كل محاولات الطلاب المرتبطة به أيضاً.`,
+        {
+            title: 'حذف اختبار',
+            icon: '📝',
+            okText: 'حذف الكل',
+            cancelText: 'إلغاء',
+            danger: true
+        }
+    );
+    if (!ok) return;
 
     try {
         const attemptsSnap = await db.collection('examAttempts').where('examId', '==', examId).get();
@@ -1803,7 +1885,15 @@ async function stopMyStreamFromList(docId, isCurrentSession) {
         ? `⚠️ هل أنت متأكد من إيقاف بثك الحالي؟\n\nسيتم فصل كل الطلاب المتصلين.`
         : `⚠️ ده بث من جلسة تانية (أو متبقي في السيرفر).\n\nهل تريد إيقافه؟`;
 
-    if (!confirm(confirmMsg)) return;
+    // ✅ showConfirm بدل confirm
+    const ok = await showConfirm(confirmMsg, {
+        title: 'إيقاف البث',
+        icon: '⏹️',
+        okText: 'إيقاف',
+        cancelText: 'إلغاء',
+        danger: true
+    });
+    if (!ok) return;
 
     try {
         const docRef = db.collection('liveStreams').doc(docId);
@@ -1869,10 +1959,19 @@ async function checkMyExistingStream() {
         if (myStreams.length === 0) return;
 
         const count = myStreams.length;
-        const choice = confirm(
+
+        // ✅ showConfirm بدل confirm
+        const choice = await showConfirm(
             `⚠️ لديك ${count} بث نشط من جلسة سابقة:\n\n` +
             `هل تريد إيقافها كلها الآن؟\n` +
-            `(اضغط Cancel لو عايز تسيبها — بس الكاميرا مش هتشتغل تلقائياً)`
+            `(اضغط "إلغاء" لو عايز تسيبها — بس الكاميرا مش هتشتغل تلقائياً)`,
+            {
+                title: 'بثوث قديمة',
+                icon: '🔴',
+                okText: 'إيقاف الكل',
+                cancelText: 'إلغاء',
+                danger: true
+            }
         );
 
         if (choice) {
