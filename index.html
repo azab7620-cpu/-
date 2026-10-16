@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="نُورُ تَعْلِيمِ الأَزْهَرِ — منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر، ومتابعة دقيقة للتقدم.">
+    <meta name="theme-color" content="#3b0a0a">
+    <meta property="og:title" content="نُورُ تَعْلِيمِ الأَزْهَرِ">
+    <meta property="og:description" content="منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233b0a0a'/%3E%3Cpath d='M32 18c-5-3-12-3-17-1v27c5-2 12-2 17 1 5-3 12-3 17-1V17c-5-2-12-2-17 1z' fill='none' stroke='%23c9a961' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M32 18v27' stroke='%23c9a961' stroke-width='3'/%3E%3C/svg%3E">
+    <title>نُورُ تَعْلِيمِ الأَزْهَرِ</title>
+
+    <!-- ✅ CSP محسّنة: بدون unsafe-inline في script-src + منع inline event handlers -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self'
+                 https://www.gstatic.com
+                 https://www.google.com
+                 https://www.google.com/recaptcha/
+                 https://www.gstatic.com/recaptcha/
+                 https://apis.google.com
+                 https://www.recaptcha.net;
+      script-src-attr 'none';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: https:;
+      frame-src https://www.youtube.com
+                https://www.youtube-nocookie.com
+                https://drive.google.com
+                https://*.google.com
+                https://www.google.com/recaptcha/
+                https://www.recaptcha.net;
+      connect-src 'self'
+                  https://*.googleapis.com
+                  https://*.firebaseio.com
+                  wss://*.firebaseio.com
+                  https://*.firebaseapp.com
+                  https://content-firebaseappcheck.googleapis.com
+                  https://script.google.com
+                  https://script.googleusercontent.com
+                  https://www.google.com
+                  https://www.google.com/recaptcha/
+                  https://www.recaptcha.net;
+      media-src 'self' blob: mediastream:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    ">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Aref+Ruqaa:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
+
+    <!-- ✅ ملف CSS خارجي -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol>
+            <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></symbol>
+            <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+            <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+            <symbol id="i-headset" viewBox="0 0 24 24"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+            <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+        </defs>
+    </svg>
+
+    <div id="toastHost" role="status" aria-live="polite"></div>
+
+    <header>
+        <div class="nav-container">
+            <div class="logo-area" id="logoArea" role="button" tabindex="0" aria-label="الرئيسية">
+                <div class="logo-icon"><svg class="ico"><use href="#i-book"/></svg></div>
+                <div class="logo-text">
+                    <h1>نُورُ تَعْلِيمِ الأَزْهَرِ</h1>
+                    <span>منصة الطالب الأزهري</span>
+                </div>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#" data-nav="home" data-action="show-home" class="active">الرئيسية</a></li>
+                <li><a href="#" data-nav="courses" data-action="scroll-to" data-target="coursesSection">الكورسات</a></li>
+                <li><a href="#" data-nav="teachers" data-action="scroll-to" data-target="teachersSection">المدرسون</a></li>
+                <li><a href="#" data-nav="books" data-action="scroll-to" data-target="booksSection">الكتب</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <button type="button" data-action="toggle-dark" class="btn-icon" title="تبديل الوضع الداكن" aria-label="تبديل الوضع الداكن">🌙</button>
+                <a href="#" data-action="show-auth" data-mode="login" class="btn-login">تسجيل الدخول</a>
+                <a href="#" data-action="show-auth" data-mode="register" class="btn-register">إنشاء حساب</a>
+            </div>
+            <div class="nav-buttons" id="navUser" style="display:none;">
+                <button type="button" data-action="toggle-dark" class="btn-icon" title="تبديل الوضع الداكن" aria-label="تبديل الوضع الداكن">🌙</button>
+                <span style="color:#3b0a0a; font-weight:700; font-size:13px;" id="userNameDisplay"></span>
+                <a href="admin.html" id="adminLinkBtn" style="display:none;" class="btn-admin-panel">لوحة الأدمن</a>
+                <a href="#" data-action="logout" class="btn-login" style="margin-right:8px;">تسجيل خروج</a>
+            </div>
+        </div>
+    </header>
+
+    <div id="homeSection">
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <span class="hero-label">منصة الطالب الأزهري</span>
+                    <h1 class="hero-title">نُورُ <span>تَعْلِيمِ الأَزْهَرِ</span></h1>
+                    <p class="hero-desc">
+                        محتوى تعليمي يليق بتميز طالب الأزهر الشريف — كورسات متكاملة، مدرسون خبراء، ومتابعة دقيقة لتقدمك الدراسي.
+                    </p>
+                    <div class="hero-btns">
+                        <a href="#" data-action="show-auth" data-mode="register" class="btn-hero-primary">سجل الآن ←</a>
+                        <a href="#" data-action="scroll-to" data-target="coursesSection" class="btn-hero-outline">📚 الكورسات</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-container animate-fade">
+            <div class="section-header"><span>لماذا نحن؟</span><h3>ليه نور تعليم الأزهر؟</h3><p>منصة متكاملة لطلاب الأزهر</p></div>
+            <div class="card-grid">
+                <div class="card animate-scale"><div class="feature-icon"><svg class="ico"><use href="#i-layers"/></svg></div><h4>منهج شامل</h4><p>وحدات ومراجعات مرتبة حسب صفك الدراسي.</p></div>
+                <div class="card animate-scale delay-1"><div class="feature-icon"><svg class="ico"><use href="#i-award"/></svg></div><h4>جودة عالية</h4><p>محتوى منظم يليق بتميز طالب الأزهر.</p></div>
+                <div class="card animate-scale delay-2"><div class="feature-icon"><svg class="ico"><use href="#i-users"/></svg></div><h4>مدرسون متخصصون</h4><p>نخبة من المدرسين في مواد المنهج الأزهري.</p></div>
+                <div class="card animate-scale delay-3"><div class="feature-icon"><svg class="ico"><use href="#i-clock"/></svg></div><h4>تعلم في أي وقت</h4><p>من موبايلك أو لابتوبك، وقت ما يناسبك.</p></div>
+            </div>
+        </div>
+        <div class="section-container animate-fade" id="teachersSection">
+            <div class="section-header"><span>المدرسون</span><h3>مدرسين نور تعليم الأزهر</h3></div>
+            <div class="card-grid" id="teachersGrid"></div>
+        </div>
+        <div class="section-container animate-fade" id="coursesSection">
+            <div class="section-header"><span>كورساتنا</span><h3>كورسات هتفرق معاك</h3></div>
+            <div class="card-grid" id="coursesGrid"></div>
+        </div>
+        <div class="section-container animate-fade" id="booksSection">
+            <div class="section-header"><span>مكتبة الطالب</span><h3>الكتب والملازم</h3></div>
+            <div class="card-grid" id="booksGrid"></div>
+        </div>
+    </div>
+
+    <div id="studentDashboard" class="dashboard-section">
+        <div class="student-dashboard-container">
+            <div class="welcome-banner animate-fade">
+                <div>
+                    <h2>أهلاً بك، <span id="studentNameDash"></span> 👋</h2>
+                    <p>الصف: <span id="studentGradeDash" style="font-weight:700; color:#b8935a;"></span></p>
+                </div>
+                <a href="#" data-action="show-home" class="back-home" style="margin:0;">← العودة للرئيسية</a>
+            </div>
+
+            <div class="dashboard-tabs animate-fade delay-1">
+                <button type="button" data-tab="courses" data-action="switch-tab" class="active">📚 كورساتي</button>
+                <button type="button" data-tab="exams" data-action="switch-tab">📝 الاختبارات</button>
+                <button type="button" data-tab="grades" data-action="switch-tab">📊 درجاتي</button>
+                <button type="button" data-tab="live" data-action="switch-tab">
+                    🔴 البث المباشر
+                    <span id="liveDotBadge" style="display:none; background:#a00; color:#fff; padding:2px 8px; border-radius:50px; font-size:10px; margin-right:6px; animation:pulse 1.5s infinite;">●</span>
+                </button>
+                <button type="button" data-tab="platform" data-action="switch-tab">💻 المنصة</button>
+            </div>
+
+            <div id="tab-courses" class="student-tab-content active animate-fade delay-2">
+                <div class="courses-grid" id="studentCoursesGrid"></div>
+            </div>
+
+            <div id="tab-exams" class="student-tab-content animate-fade delay-2" style="display:none;">
+                <div class="dash-block">
+                    <h4>📝 الاختبارات المتاحة لك</h4>
+                    <div id="studentExamsList"></div>
+                </div>
+            </div>
+
+            <div id="tab-grades" class="student-tab-content animate-fade delay-2" style="display:none;">
+                <div class="dash-block">
+                    <h4>📊 درجاتي ونتائج الاختبارات</h4>
+                    <div id="gradesList">
+                        <p style="text-align:center; color:#888; padding:30px;">⏳ جاري التحميل...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-live" class="student-tab-content animate-fade delay-2" style="display:none;">
+                <div class="dash-block">
+                    <h4>🔴 البث المباشر</h4>
+                    <div id="liveStreamViewer">
+                        <div style="text-align:center; padding:40px 20px; color:#888;">
+                            <div style="font-size:60px; margin-bottom:15px; opacity:0.5;">📺</div>
+                            <h3 style="color:#666; margin-bottom:10px;">جاري التحقق من حالة البث...</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-platform" class="student-tab-content animate-fade delay-2" style="display:none;">
+                <div class="dash-block">
+                    <h4>👨‍🏫 مدرسينا</h4>
+                    <div class="card-grid" id="studentTeachersGrid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="courseDetailView" class="course-detail-view">
+        <button type="button" data-action="back-to-dashboard" class="back-btn">← العودة للكورسات</button>
+
+        <div class="detail-header animate-fade">
+            <h2 id="detailCourseTitle">عنوان الكورس</h2>
+            <p id="detailCourseSub"></p>
+            <div class="detail-progress">
+                <div class="progress-container" style="flex:1;">
+                    <div class="progress-fill" id="detailProgressFill" style="width: 0%;"></div>
+                </div>
+                <span id="detailProgressText">0%</span>
+            </div>
+        </div>
+
+        <div class="units-section-title animate-fade delay-1">
+            <span>📖</span> محتوى الوحدات
+        </div>
+
+        <div id="unitsContainer" class="animate-fade delay-2"></div>
+    </div>
+
+    <div id="examPage">
+        <div class="exam-header">
+            <h2 id="examTitleHeader">عنوان الاختبار</h2>
+            <p id="examProgressText">السؤال 1 من 10</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div id="questionNav" class="question-nav"></div>
+        <div class="question-box">
+            <div class="q-text" id="qTextDisplay">السؤال هنا</div>
+            <ul class="options-list" id="optionsList"></ul>
+        </div>
+        <div class="nav-btns">
+            <button type="button" class="btn-nav btn-prev" id="prevBtn" data-action="prev-question">السابق</button>
+            <button type="button" class="btn-nav btn-next" id="nextBtn" data-action="next-question">التالي</button>
+        </div>
+
+        <div id="resultBox" style="display:none;" class="result-box">
+            <h3 class="result-title" id="resultTitle">مبروك!</h3>
+            <div id="resultDetails"></div>
+            <div id="reviewAnswers"></div>
+            <button type="button" data-action="exit-exam" id="exitExamBtn" class="btn-nav btn-next" style="margin-top:15px; display:none;">العودة لصفحتي</button>
+        </div>
+    </div>
+
+    <div id="authSection" class="auth-page-section">
+        <div class="auth-layout-container">
+            <div class="auth-sidebar">
+                <div class="islamic-ornament orn-1">✦</div>
+                <div class="islamic-ornament orn-2">❋</div>
+                <div class="islamic-ornament orn-3">✧</div>
+                <div class="islamic-ornament orn-4">۞</div>
+
+                <div class="auth-sidebar-top">
+                    <a href="#" data-action="show-home" class="btn-home-pill">🏠 الرئيسية</a>
+                    <button type="button" data-action="toggle-dark" class="btn-icon" style="border-color: rgba(255,255,255,0.3); color: #fff; width:38px;height:38px;">🌙</button>
+                </div>
+
+                <div class="auth-sidebar-brand">
+                    <div class="auth-brand-logo">🕌</div>
+                    <h2>نُورُ تَعْلِيمِ الأَزْهَرِ</h2>
+                    <p>منصة الطالب والأدمن</p>
+                    <div class="brand-divider"></div>
+                </div>
+
+                <ul class="auth-features-list">
+                    <li><div class="icon-box">📖</div><span>كورسات ومحاضرات</span></li>
+                    <li><div class="icon-box">🎓</div><span>متابعة التقدم</span></li>
+                    <li><div class="icon-box">🎧</div><span>دعم فني سريع</span></li>
+                </ul>
+
+                <div class="auth-sidebar-footer">محتوى تعليمي يليق بتميز طالب الأزهر</div>
+            </div>
+
+            <div class="auth-main-content">
+                <div class="auth-card-modern">
+                    <div id="registerFormContainer">
+                        <div class="auth-card-header"><h3>انضم لمنصتنا</h3><p>أنشئ حسابك كطالب</p><div class="gold-divider-line"></div></div>
+                        <form id="registerForm" novalidate>
+                            <div class="form-section-title">البيانات الشخصية</div>
+                            <div class="form-grid-2">
+                                <div class="form-group-modern"><label>اسم المستخدم</label><div class="input-wrapper"><input type="text" id="regName" placeholder="الاسم الكامل" required maxlength="100"><span class="input-icon-right">👤</span></div></div>
+                                <div class="form-group-modern"><label>البريد الإلكتروني</label><div class="input-wrapper"><input type="email" id="regEmail" placeholder="example@email.com" required maxlength="200"><span class="input-icon-right">✉️</span></div></div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group-modern"><label>رقم الهاتف</label><div class="input-wrapper"><input type="tel" id="regPhone" placeholder="01xxxxxxxxx" required maxlength="11"><span class="input-icon-right">📞</span></div></div>
+                                <div class="form-group-modern"><label>رقم هاتف ولي الأمر</label><div class="input-wrapper"><input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" maxlength="11"><span class="input-icon-right">📞</span></div></div>
+                            </div>
+                            <div class="form-section-title">الموقع والصف</div>
+                            <div class="form-group-modern full-width" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                                <input type="checkbox" id="regIsOutside" style="width:20px; height:20px; margin:0;">
+                                <label for="regIsOutside" style="font-weight:700; color:#3b0a0a; margin:0; font-size:13px;">🌍 أدرس خارج مصر (صفارة)</label>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group-modern">
+                                    <label>المحافظة</label>
+                                    <div class="input-wrapper">
+                                        <select id="regGovernorate" required>
+                                            <option value="" disabled selected>اختر المحافظة</option>
+                                            <option value="القاهرة">القاهرة</option>
+                                            <option value="الجيزة">الجيزة</option>
+                                            <option value="الإسكندرية">الإسكندرية</option>
+                                            <option value="بورسعيد">بورسعيد</option>
+                                            <option value="السويس">السويس</option>
+                                            <option value="دمياط">دمياط</option>
+                                            <option value="الدقهلية">الدقهلية</option>
+                                            <option value="الشرقية">الشرقية</option>
+                                            <option value="القليوبية">القليوبية</option>
+                                            <option value="كفر الشيخ">كفر الشيخ</option>
+                                            <option value="الغربية">الغربية</option>
+                                            <option value="المنوفية">المنوفية</option>
+                                            <option value="البحيرة">البحيرة</option>
+                                            <option value="الإسماعيلية">الإسماعيلية</option>
+                                            <option value="أسوان">أسوان</option>
+                                            <option value="أسيوط">أسيوط</option>
+                                            <option value="الأقصر">الأقصر</option>
+                                            <option value="البحر الأحمر">البحر الأحمر</option>
+                                            <option value="الوادي الجديد">الوادي الجديد</option>
+                                            <option value="سوهاج">سوهاج</option>
+                                            <option value="قنا">قنا</option>
+                                            <option value="مرسى مطروح">مرسى مطروح</option>
+                                            <option value="شمال سيناء">شمال سيناء</option>
+                                            <option value="جنوب سيناء">جنوب سيناء</option>
+                                            <option value="بني سويف">بني سويف</option>
+                                            <option value="الفيوم">الفيوم</option>
+                                            <option value="المنيا">المنيا</option>
+                                        </select>
+                                        <span class="input-icon-right">📍</span>
+                                    </div>
+                                </div>
+                                <div id="regCenterContainer" class="form-group-modern">
+                                    <label>المركز</label>
+                                    <div class="input-wrapper">
+                                        <input type="text" id="regCenter" placeholder="أدخل المركز" maxlength="100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-section-title">المرحلة والصف</div>
+                            <div class="form-group-modern"><label>المرحلة</label><div class="input-wrapper"><select id="regStage" required><option value="" disabled selected>اختر المرحلة</option><option value="primary">ابتدائي أزهري</option><option value="preparatory">إعدادي أزهري</option><option value="secondary">ثانوي أزهري</option></select><span class="input-icon-right">🎓</span></div></div>
+                            <div class="form-group-modern"><label>الصف الدراسي</label><div class="input-wrapper"><select id="regGrade" required><option value="" disabled selected>اختر الصف</option></select><span class="input-icon-right">📚</span></div></div>
+                            <div class="form-section-title">بيانات الحساب</div>
+                            <div class="form-grid-2">
+                                <div class="form-group-modern"><label>كلمة المرور</label><div class="input-wrapper"><input type="password" id="regPass" placeholder="كلمة المرور (8 أحرف على الأقل)" required maxlength="100"><span class="input-icon-right">🔒</span><span class="input-icon-left" data-action="toggle-password" data-input-id="regPass" role="button" tabindex="0">👁️</span></div></div>
+                                <div class="form-group-modern"><label>تأكيد كلمة المرور</label><div class="input-wrapper"><input type="password" id="regConfirmPass" placeholder="أعد إدخال كلمة المرور" required maxlength="100"><span class="input-icon-right">🔒</span><span class="input-icon-left" data-action="toggle-password" data-input-id="regConfirmPass" role="button" tabindex="0">👁️</span></div></div>
+                            </div>
+                            <button type="submit" id="regSubmitBtn" class="btn-submit-modern">إنشاء الحساب ←</button>
+                        </form>
+                        <div class="auth-toggle-footer"><p>لديك حساب بالفعل؟</p><button type="button" class="btn-outline-toggle" data-action="switch-auth" data-mode="login">تسجيل الدخول</button></div>
+                    </div>
+                    <div id="loginFormContainer" style="display:none;">
+                        <div class="auth-card-header"><h3>أهلاً بك مجدداً</h3><p>سجل دخولك</p><div class="gold-divider-line"></div></div>
+                        <form id="loginForm" novalidate>
+                            <div class="form-group-modern"><label>البريد الإلكتروني</label><div class="input-wrapper"><input type="email" id="loginEmailOrPhone" placeholder="example@email.com" required maxlength="200"><span class="input-icon-right">✉️</span></div></div>
+                            <div class="form-group-modern"><label>كلمة المرور</label><div class="input-wrapper"><input type="password" id="loginPass" placeholder="كلمة المرور" required maxlength="100"><span class="input-icon-right">🔒</span><span class="input-icon-left" data-action="toggle-password" data-input-id="loginPass" role="button" tabindex="0">👁️</span></div></div>
+                            <button type="button" class="forgot-link" data-action="reset-password">نسيت كلمة المرور؟</button>
+                            <button type="submit" id="loginSubmitBtn" class="btn-submit-modern">تسجيل الدخول ←</button>
+                        </form>
+                        <div class="auth-toggle-footer"><p>ليس لديك حساب؟</p><button type="button" class="btn-outline-toggle" data-action="switch-auth" data-mode="register">إنشاء حساب جديد</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoModal" class="video-modal">
+        <div class="video-modal-content">
+            <button type="button" class="close-video-modal" data-action="close-video" aria-label="إغلاق">✕</button>
+
+            <div class="video-modal-header">
+                <div class="platform-brand">
+                    <div class="platform-logo">🕌</div>
+                    <div class="platform-info">
+                        <h4>نُورُ تَعْلِيمِ الأَزْهَرِ</h4>
+                        <p>منصة تعليمية معتمدة</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-modal-video-title" id="videoModalTitle">عنوان الفيديو</div>
+
+            <div class="video-modal-iframe-wrapper" id="videoIframeWrapper">
+                <iframe id="videoIframe" src="" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="مشغل الفيديو"></iframe>
+
+                <div class="video-brand-watermark" id="videoWatermark">
+                    <span class="wm-icon">🕌</span>
+                    <span>نُورُ الأَزْهَرِ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col"><h4>روابط سريعة</h4><ul>
+                <li><a href="#" data-action="show-home">الرئيسية</a></li>
+                <li><a href="#" data-action="scroll-to" data-target="teachersSection">المدرسون</a></li>
+                <li><a href="#" data-action="scroll-to" data-target="coursesSection">الكورسات</a></li>
+                <li><a href="#" data-action="scroll-to" data-target="booksSection">الكتب</a></li>
+            </ul></div>
+            <div class="footer-col"><h4>تواصل معنا</h4><div class="social-icons"><a href="https://wa.me/201113224591" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="واتساب"><svg class="ico" style="width:18px;height:18px"><use href="#i-headset"/></svg></a></div><p style="margin-top:8px; color:#c9a961; font-size:12px;" dir="ltr">01113224591</p></div>
+            <div class="footer-col" style="text-align:left;"><h3>نُورُ تَعْلِيمِ الأَزْهَرِ</h3><p>محتوى تعليمي يليق بتميز طالب الأزهر</p><p style="color:#c9a961; font-weight:700;">مستقبلك يبدأ من هنا</p></div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 نُورُ تَعْلِيمِ الأَزْهَرِ — جميع الحقوق محفوظة</p>
+            <div class="footer-legal">
+                <a href="#" data-action="open-legal" data-kind="privacy">سياسة الخصوصية</a>
+                <a href="#" data-action="open-legal" data-kind="terms">شروط الاستخدام</a>
+            </div>
+            <div class="developer-credit">
+                <a href="https://wa.me/201024052857" target="_blank" rel="noopener noreferrer" class="dev-link">
+                    <img src="raheed-logo.jpg" alt="Raheed" class="dev-img" id="devLogo">
+                    <div class="dev-text">
+                        تم التطوير بواسطة Raheed
+                        <span>01024052857</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="legalModal" class="legal-modal">
+        <div class="legal-box">
+            <button type="button" class="legal-close" data-action="close-legal" aria-label="إغلاق">✕</button>
+            <div id="legalContent"></div>
+        </div>
+    </div>
+
+    <a href="https://wa.me/201113224591" target="_blank" rel="noopener noreferrer" class="support-float-btn">
+        <div class="support-text">
+            <h5>الدعم الفني</h5>
+            <p>لو قابلتك مشكلة، احنا معاك</p>
+        </div>
+        <div class="support-float-icon"><svg class="ico"><use href="#i-headset"/></svg></div>
+    </a>
+
+    <!-- ✅ كل الجافاسكربت في ملفات خارجية -->
+    <script src="js/security.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

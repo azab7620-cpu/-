@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الأدمن - نُورُ تَعْلِيمِ الأَزْهَرِ</title>
+    <meta name="theme-color" content="#3b0a0a">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- ✅ CSP محكمة — بدون unsafe-inline في script-src -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self'
+                 https://www.gstatic.com
+                 https://www.google.com
+                 https://www.google.com/recaptcha/
+                 https://www.gstatic.com/recaptcha/
+                 https://apis.google.com
+                 https://www.recaptcha.net;
+      script-src-attr 'none';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: https: blob:;
+      frame-src https://www.youtube.com
+                https://drive.google.com
+                https://*.google.com
+                https://www.google.com/recaptcha/
+                https://www.recaptcha.net;
+      connect-src 'self'
+                  https://*.googleapis.com
+                  https://*.firebaseio.com
+                  wss://*.firebaseio.com
+                  https://*.firebaseapp.com
+                  https://content-firebaseappcheck.googleapis.com
+                  https://www.google.com
+                  https://www.google.com/recaptcha/
+                  https://www.recaptcha.net;
+      media-src 'self' blob: mediastream:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    ">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
+
+    <!-- ✅ ملف CSS خارجي -->
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div id="toastHost" role="status" aria-live="polite"></div>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">جاري التحقق من الصلاحيات...</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         🏠 Header
+         ═══════════════════════════════════════════════════════ -->
+    <header>
+        <div class="nav-container">
+            <div class="logo-text">
+                <h1 class="thuluth-text">نُورُ تَعْلِيمِ الأَزْهَرِ</h1>
+                <span>لوحة الأدمن</span>
+            </div>
+            <div class="nav-buttons">
+                <button type="button" class="btn-dark-mode" data-action="toggle-dark" title="تبديل الوضع الداكن" aria-label="تبديل الوضع الداكن">🌙</button>
+                <span id="adminNameDisplay" class="admin-name-display"></span>
+                <button type="button" class="btn-home" data-action="open-home">🏠 فتح الرئيسية</button>
+                <button type="button" class="btn-logout" data-action="logout">تسجيل خروج</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📊 Main Dashboard
+         ═══════════════════════════════════════════════════════ -->
+    <div class="dashboard-container">
+        <h2 class="dashboard-title">⚙️ لوحة تحكم الأدمن</h2>
+
+        <!-- ─── Admin Tabs ─── -->
+        <div class="admin-tabs">
+            <button type="button" class="active" data-action="show-tab" data-tab="students">👥 الطلاب</button>
+            <button type="button" data-action="show-tab" data-tab="bundles">📦 الحزم والوحدات</button>
+            <button type="button" data-action="show-tab" data-tab="courses">📹 المحاضرات</button>
+            <button type="button" data-action="show-tab" data-tab="books">📚 الكتب</button>
+            <button type="button" data-action="show-tab" data-tab="teachers">👨‍🏫 المدرسون</button>
+            <button type="button" data-action="show-tab" data-tab="exams">📝 الاختبارات</button>
+            <button type="button" data-action="show-tab" data-tab="liveStream">🔴 البث المباشر</button>
+            <button type="button" data-action="show-tab" data-tab="addCourse">➕ إضافة محاضرة</button>
+            <button type="button" data-action="show-tab" data-tab="addBook">➕ إضافة كتاب</button>
+            <button type="button" data-action="show-tab" data-tab="addTeacher">➕ إضافة مدرس</button>
+            <button type="button" data-action="show-tab" data-tab="addBundle">➕ إنشاء وحدة</button>
+            <button type="button" data-action="show-tab" data-tab="addExam">➕ إضافة اختبار</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             👥 TAB: Students
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabStudents" class="tab-content active">
+            <div class="alert alert-success alert-margin">
+                ⚠️ <strong>مهم جداً:</strong> بعد إضافة المحاضرات والكتب والاختبارات، يجب أن تضغط زر <strong>"تفعيل"</strong> بجانب الطالب ليرى المحتوى الخاص بصفه.
+            </div>
+
+            <div class="search-bar">
+                <div class="search-input-wrapper">
+                    <input type="text" id="studentSearchInput" placeholder="🔍 ابحث بالاسم أو رقم الطالب..." class="search-input">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button type="button" class="btn-card btn-clear-search" data-action="clear-search">✖ مسح البحث</button>
+                <span id="searchResultsCount" class="search-count"></span>
+            </div>
+
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>الصف</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             📦 TAB: Bundles
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabBundles" class="tab-content">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الوحدة</th>
+                            <th>الصف</th>
+                            <th>العناصر</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bundlesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             📹 TAB: Courses
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabCourses" class="tab-content">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>العنوان</th>
+                            <th>الصف</th>
+                            <th>الرابط</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coursesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             📚 TAB: Books
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabBooks" class="tab-content">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>العنوان</th>
+                            <th>الصف</th>
+                            <th>الرابط</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             👨‍🏫 TAB: Teachers
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabTeachers" class="tab-content">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>الصورة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teachersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             📝 TAB: Exams
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabExams" class="tab-content">
+            <h4 class="section-heading">📝 قائمة الاختبارات</h4>
+            <div class="alert alert-info">
+                🤖 <strong>التصحيح تلقائي:</strong> بمجرد أن يسلّم الطالب الاختبار، يقوم النظام بتصحيحه خلال ثوانٍ تلقائياً.
+            </div>
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>العنوان</th>
+                            <th>الصف</th>
+                            <th>عدد الأسئلة</th>
+                            <th>النوع</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             🔴 TAB: Live Stream
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabLiveStream" class="tab-content">
+            <h4 class="section-heading">🔴 البث المباشر الداخلي</h4>
+
+            <div id="liveStreamStatusBox" class="live-status-box">
+                <div class="live-status-empty">⏸️ لا يوجد بث نشط</div>
+            </div>
+
+            <div id="myStreamsZone">
+                <div>
+                    <strong class="my-streams-title">📋 بثوثي النشطة</strong>
+                    <span class="my-streams-desc">اعرض كل البثوث اللي أنت مسجلها دلوقتي وأوقف أي واحد منهم.</span>
+                </div>
+                <button type="button" id="myStreamsBtn" data-action="show-my-streams-modal">
+                    📋 بثوثي النشطة
+                    <span id="myStreamsCount" class="my-streams-count">0</span>
+                </button>
+            </div>
+
+            <div class="live-control-panel">
+                <h5>🎛️ لوحة التحكم بالبث</h5>
+
+                <div class="live-toolbar" id="liveToolbar">
+                    <button type="button" id="btnAdminCam" data-action="toggle-admin-cam" class="neutral">
+                        <span>📷</span> <span>إيقاف الكاميرا</span>
+                    </button>
+                    <button type="button" id="btnAdminMic" data-action="toggle-admin-mic" class="neutral">
+                        <span>🎤</span> <span>إيقاف المايك</span>
+                    </button>
+                    <button type="button" id="btnSwitchCam" data-action="switch-admin-cam" class="neutral">
+                        <span>🔄</span> <span>Front 1</span>
+                    </button>
+                    <span class="stream-status on" id="viewerCountBadge">
+                        👥 <strong id="viewerCount">0</strong> مشاهد
+                    </span>
+                </div>
+
+                <div id="permissionPanel">
+                    <h6 class="permission-heading">🔐 صلاحيات الطلاب أثناء البث</h6>
+                    <div class="live-permission-box">
+                        <label class="perm-toggle">
+                            <span>📷 السماح لكل الطلاب بفتح الكاميرا</span>
+                            <input type="checkbox" id="permAllCameras">
+                        </label>
+                        <label class="perm-toggle">
+                            <span>🎤 السماح لكل الطلاب بفتح المايكروفون</span>
+                            <input type="checkbox" id="permAllMics">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="localPreviewContainer">
+                <label class="preview-label">📹 معاينة كاميرتك:</label>
+                <video id="localPreview" autoplay muted playsinline></video>
+                <p class="preview-hint">👁️ المربع الأسود الصغير = عرض تقريبي لما يراه الطلاب</p>
+            </div>
+
+            <div id="studentStreamsContainer">
+                <h5 class="section-heading">👥 فيديوهات الطلاب المتصلين:</h5>
+                <div id="studentStreamsGrid" class="student-streams-grid"></div>
+            </div>
+
+            <form id="liveStreamForm">
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label for="liveTitle">📝 عنوان البث</label>
+                        <input type="text" id="liveTitle" placeholder="مثال: مراجعة ليلة الامتحان - الفقه" required maxlength="200">
+                    </div>
+                    <div>
+                        <label for="liveGrade">🎓 الصف المستهدف</label>
+                        <select id="liveGrade" required>
+                            <option value="">اختر الصف</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="liveSource">📷 مصدر الفيديو الأساسي</label>
+                        <select id="liveSource">
+                            <option value="camera">📷 كاميرا + مايك</option>
+                            <option value="screen">🖥️ مشاركة الشاشة + صوت</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="live-form-actions">
+                    <button type="submit" id="startLiveBtn" class="btn-submit">🔴 بدء البث</button>
+                    <button type="button" id="stopLiveBtn" data-action="stop-live-stream" class="btn-submit">⏹️ إيقاف البث</button>
+                </div>
+            </form>
+
+            <div id="liveStreamMsg" class="msg-area"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             ➕ TAB: Add Course
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabAddCourse" class="tab-content">
+            <div class="add-form">
+                <h4 class="section-heading">📹 إضافة محاضرة جديدة</h4>
+                <div class="alert alert-info">
+                    💡 <strong>طريقة الرفع:</strong> ارفع الفيديو على <strong>Google Drive</strong> ← كليك يمين ← Share ← Change to anyone with link ← Copy link ← الصقه هنا.
+                </div>
+                <form id="addCourseForm">
+                    <div class="form-grid">
+                        <div>
+                            <label for="courseTitle">عنوان المحاضرة</label>
+                            <input type="text" id="courseTitle" required maxlength="200">
+                        </div>
+                        <div>
+                            <label for="courseGrade">الصف الدراسي</label>
+                            <select id="courseGrade" required>
+                                <option value="">اختر الصف</option>
+                            </select>
+                        </div>
+                        <div class="full-width">
+                            <label for="courseLink">رابط المحاضرة (Google Drive أو YouTube)</label>
+                            <input type="url" id="courseLink" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing" required>
+                        </div>
+                        <div class="full-width checkbox-row">
+                            <input type="checkbox" id="courseShowInHome" class="checkbox-input">
+                            <label for="courseShowInHome" class="checkbox-label">🌐 ظهور في الصفحة الرئيسية (للجميع)</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة المحاضرة</button>
+                </form>
+                <div id="courseAddMsg" class="msg-area"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             ➕ TAB: Add Book
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabAddBook" class="tab-content">
+            <div class="add-form">
+                <h4 class="section-heading">📚 إضافة كتاب أو ملزمة</h4>
+                <div class="alert alert-info">
+                    💡 <strong>طريقة الرفع:</strong> ارفع الـ PDF على <strong>Google Drive</strong> ← كليك يمين ← Share ← Change to anyone with link ← Copy link ← الصقه هنا.
+                </div>
+                <form id="addBookForm">
+                    <div class="form-grid">
+                        <div>
+                            <label for="bookTitle">عنوان الكتاب</label>
+                            <input type="text" id="bookTitle" required maxlength="200">
+                        </div>
+                        <div>
+                            <label for="bookGrade">الصف الدراسي</label>
+                            <select id="bookGrade" required>
+                                <option value="">اختر الصف</option>
+                            </select>
+                        </div>
+                        <div class="full-width">
+                            <label for="bookLink">رابط التحميل (Google Drive)</label>
+                            <input type="url" id="bookLink" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing" required>
+                        </div>
+                        <div class="full-width checkbox-row">
+                            <input type="checkbox" id="bookShowInHome" class="checkbox-input">
+                            <label for="bookShowInHome" class="checkbox-label">🌐 ظهور في الصفحة الرئيسية (للجميع)</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة الكتاب</button>
+                </form>
+                <div id="bookAddMsg" class="msg-area"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             ➕ TAB: Add Teacher
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabAddTeacher" class="tab-content">
+            <div class="add-form">
+                <h4 class="section-heading">👨‍🏫 إضافة مدرس جديد</h4>
+                <form id="addTeacherForm">
+                    <div class="form-grid">
+                        <div>
+                            <label for="teacherName">اسم المدرس</label>
+                            <input type="text" id="teacherName" required maxlength="100">
+                        </div>
+                        <div>
+                            <label for="teacherSpecialty">التخصص</label>
+                            <input type="text" id="teacherSpecialty" maxlength="200">
+                        </div>
+                        <div class="full-width">
+                            <label for="teacherImage">رابط صورة المدرس (اختياري)</label>
+                            <input type="url" id="teacherImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="full-width">
+                            <label for="teacherImageFile">أو ارفع صورة من جهازك (سيتم ضغطها تلقائياً)</label>
+                            <input type="file" id="teacherImageFile" accept="image/*">
+                            <div class="image-preview-box" id="teacherImagePreview">
+                                <img id="teacherPreviewImg" src="" alt="معاينة">
+                                <p>معاينة الصورة — سيتم ضغطها وحفظها تلقائياً</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">إضافة المدرس</button>
+                </form>
+                <div id="teacherAddMsg" class="msg-area"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             ➕ TAB: Add Bundle
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabAddBundle" class="tab-content">
+            <div class="bundle-container-box">
+                <div class="add-form">
+                    <h5 class="bundle-step-heading">1. أنشئ الوحدة الجديدة:</h5>
+                    <form id="addBundleForm">
+                        <div class="form-grid">
+                            <div>
+                                <label for="bundleTitle">اسم الوحدة</label>
+                                <input type="text" id="bundleTitle" required maxlength="200">
+                            </div>
+                            <div>
+                                <label for="bundleGrade">الصف الدراسي</label>
+                                <select id="bundleGrade" required>
+                                    <option value="">اختر الصف</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">إنشاء الوحدة</button>
+                    </form>
+                    <div id="bundleAddMsg" class="msg-area"></div>
+                </div>
+            </div>
+
+            <div class="bundle-container-box">
+                <div class="add-form">
+                    <h5 class="bundle-step-heading">2. أضف عناصر داخل الوحدة:</h5>
+                    <form id="addItemForm">
+                        <div class="form-grid">
+                            <div>
+                                <label for="itemBundleSelect">اختر الوحدة</label>
+                                <select id="itemBundleSelect" required></select>
+                            </div>
+                            <div>
+                                <label for="itemType">نوع العنصر</label>
+                                <select id="itemType">
+                                    <option value="pdf">ملف PDF</option>
+                                    <option value="video">فيديو</option>
+                                    <option value="exam">اختبار</option>
+                                </select>
+                            </div>
+
+                            <div id="sourceFields" class="full-width">
+                                <label for="sourceType">مصدر العنصر</label>
+                                <select id="sourceType">
+                                    <option value="url">رابط خارجي (Google Drive / YouTube)</option>
+                                    <option value="platform">اختيار من محتويات المنصة</option>
+                                </select>
+                            </div>
+
+                            <div id="manualFields" class="full-width">
+                                <div class="form-grid">
+                                    <div>
+                                        <label for="itemTitle">عنوان العنصر</label>
+                                        <input type="text" id="itemTitle" maxlength="200">
+                                    </div>
+                                    <div>
+                                        <label for="itemLink">الرابط</label>
+                                        <input type="url" id="itemLink" placeholder="https://drive.google.com/...">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="platformFields" class="full-width">
+                                <label for="platformItemSelect">اختر من المحاضرات أو الكتب الموجودة:</label>
+                                <select id="platformItemSelect"></select>
+                            </div>
+                        </div>
+
+                        <div id="examFields" class="full-width exam-fields-box">
+                            <div class="form-grid">
+                                <div>
+                                    <label for="examItemTitle">عنوان الاختبار</label>
+                                    <input type="text" id="examItemTitle" maxlength="200">
+                                </div>
+                                <div>
+                                    <label for="itemExamSelect">اختر الاختبار</label>
+                                    <select id="itemExamSelect"></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">إضافة العنصر للوحدة</button>
+                    </form>
+                    <div id="itemAddMsg" class="msg-area"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             ➕ TAB: Add Exam
+             ═══════════════════════════════════════════════════ -->
+        <div id="tabAddExam" class="tab-content">
+            <div class="add-form">
+                <h4 class="section-heading">📝 إضافة اختبار جديد</h4>
+                <div class="alert alert-success">
+                    💡 الاختبار لا يظهر في الصفحة الرئيسية، بل يظهر للطلاب "المفعلين" فقط.
+                </div>
+                <form id="examSetupForm">
+                    <div class="form-grid">
+                        <div>
+                            <label for="examTitle">عنوان الاختبار</label>
+                            <input type="text" id="examTitle" required maxlength="200">
+                        </div>
+                        <div>
+                            <label for="examGrade">الصف الدراسي</label>
+                            <select id="examGrade" required>
+                                <option value="">اختر الصف</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="examQuestionCount">عدد الأسئلة</label>
+                            <input type="number" id="examQuestionCount" min="1" max="50" placeholder="مثال: 5">
+                        </div>
+                        <div class="full-width">
+                            <label class="exam-one-time-box">
+                                <input type="checkbox" id="examOneTimeOnly">
+                                <span>🔒 اختبار لمرة واحدة فقط</span>
+                            </label>
+                        </div>
+                        <div class="full-width">
+                            <button type="button" class="btn-submit btn-gold" data-action="generate-questions">
+                                ⬇️ توليد حقول الأسئلة
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="questionsContainer"></div>
+                <div id="examAddMsg" class="msg-area"></div>
+
+                <button type="button" id="saveExamBtn" class="btn-save-exam" data-action="save-exam">
+                    💾 حفظ الاختبار بالكامل
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         🪟 Modals
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- Student Details Modal -->
+    <div id="studentDetailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 تفاصيل الطالب</h3>
+                <button type="button" class="modal-close" data-action="close-student-modal">✕</button>
+            </div>
+            <div id="studentDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- My Streams Modal -->
+    <div id="myStreamsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 بثوثي النشطة</h3>
+                <button type="button" class="modal-close" data-action="close-my-streams-modal">✕</button>
+            </div>
+            <div id="myStreamsContent">
+                <div class="modal-loading">⏳ جاري التحميل...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📜 External Scripts (no inline!)
+         ═══════════════════════════════════════════════════════ -->
+    <script src="js/security.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
