@@ -17,10 +17,28 @@ firebase.initializeApp(firebaseConfig);
 
 try {
     const appCheck = firebase.appCheck();
-    appCheck.activate('6LdFfxestAAAAAB3W4cnUYQbVMe1ribUigtWSq_0K', true);
-    console.log('✅ App Check (reCAPTCHA v3) مُفعّل');
+    const SITE_KEY = '6LdFfxestAAAAAB3W4cnUYQbVMe1ribUigtWSq_0K';
+    let activated = false;
+
+    // ✅ الشكل الجديد الموصى به (v9+)
+    if (firebase.appCheck && firebase.appCheck.ReCaptchaV3Provider) {
+        try {
+            const provider = new firebase.appCheck.ReCaptchaV3Provider(SITE_KEY);
+            appCheck.activate(provider, true);
+            activated = true;
+            console.log('✅ App Check (reCAPTCHA v3 Provider) مُفعّل');
+        } catch (providerErr) {
+            console.warn('⚠️ فشل الشكل الجديد، سنجرب الشكل القديم:', providerErr);
+        }
+    }
+
+    // 🔄 Fallback للشكل القديم (في حال SDK قديم)
+    if (!activated) {
+        appCheck.activate(SITE_KEY, true);
+        console.log('✅ App Check (Legacy API) مُفعّل');
+    }
 } catch (e) {
-    console.warn('⚠️ فشل تفعيل App Check:', e);
+    console.warn('⚠️ فشل تفعيل App Check بالكامل:', e);
 }
 
 const db = firebase.firestore();
