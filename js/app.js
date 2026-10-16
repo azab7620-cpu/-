@@ -291,11 +291,6 @@ async function renderBooks() {
 //  Student Dashboard
 // ═══════════════════════════════════════════════════════════
 
-/* ═══ شريط تقدم الحزمة ═══
-   ✅ يتحسب بناءً على:
-     • الاختبارات المُسلَّمة (completedExams)
-     • الفيديوهات اللي اتفرج عليها الطالب (watchedVideos)
-*/
 function calculateBundleProgress(bundle, user) {
     if (!bundle.items || bundle.items.length === 0) return 0;
     const totalItems = bundle.items.length;
@@ -305,11 +300,9 @@ function calculateBundleProgress(bundle, user) {
     const completedExams = user.completedExams || [];
 
     bundle.items.forEach((item, idx) => {
-        // ✅ اختبار مكتمل
         if (item.type === 'exam' && completedExams.includes(item.examId)) {
             completedItems++;
         }
-        // ✅ فيديو تمت مشاهدته
         else if (item.type === 'video') {
             const key = `${bundle.id}__${idx}`;
             if (watched.includes(key)) completedItems++;
@@ -358,9 +351,6 @@ async function fetchCompletedExamIds(userId) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   📺 تتبع الفيديوهات المشاهدة (لتحديث شريط تقدم الحزم)
-   ═══════════════════════════════════════════════════════════ */
 async function fetchWatchedVideos(userId) {
     try {
         const snap = await db.collection('users').doc(userId).collection('watchedVideos').get();
@@ -375,7 +365,6 @@ async function markVideoAsWatched(bundleId, itemIndex) {
     if (!currentUser) return;
     const videoKey = `${bundleId}__${itemIndex}`;
 
-    // لو مشاهد قبل كده → متعملش حاجة
     if ((currentUser.watchedVideos || []).includes(videoKey)) return;
 
     try {
@@ -387,7 +376,6 @@ async function markVideoAsWatched(bundleId, itemIndex) {
                 watchedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-        // تحديث محلي
         if (!currentUser.watchedVideos) currentUser.watchedVideos = [];
         currentUser.watchedVideos.push(videoKey);
     } catch (err) {
@@ -1532,7 +1520,7 @@ async function finishExam() {
                 if (countdownDone) showResult(data);
                 if (currentAttemptUnsub) { try { currentAttemptUnsub(); } catch(e) {} currentAttemptUnsub = null; }
 
-                // ✅✨ الجديد: نسجل إن الاختبار خلص — للاختبارات "مرة واحدة" بس
+                // ✅✨ نسجل إن الاختبار خلص — للاختبارات "مرة واحدة" بس
                 if (currentExam && currentExam.oneTimeOnly && currentUser) {
                     db.collection('users').doc(currentUser.id)
                       .collection('completedExams').doc(currentExam.id)
@@ -1624,7 +1612,6 @@ function handleActionClick(e) {
         case 'back-to-dashboard': e.preventDefault(); backToDashboard(); break;
         case 'start-exam': e.preventDefault(); startExam(el.dataset.examId); break;
 
-        /* ═══ ✅ فتح الفيديو + تسجيل المشاهدة لو كان جوه حزمة ═══ */
         case 'open-video':
             e.preventDefault();
             openVideoModal(el.dataset.link, el.dataset.title);
@@ -1738,19 +1725,40 @@ async function handleRegisterSubmit(e) {
     const password    = document.getElementById('regPass').value;
     const confirm     = document.getElementById('regConfirmPass').value;
 
+    // ═══════════════════════════════════════════════════════
+    //  ✅ التحققات (Validation)
+    // ═══════════════════════════════════════════════════════
     if (password !== confirm) { alert('كلمتا المرور غير متطابقتين.'); return; }
     if (!name || !email || !phone || !grade || !password) { alert('املأ جميع الحقول المطلوبة.'); return; }
     if (password.length < 8) { alert('كلمة المرور يجب أن تكون 8 أحرف على الأقل.'); return; }
+    if (name.length < 2 || name.length > 100) { alert('⚠️ الاسم يجب أن يكون بين حرفين و100 حرف.'); return; }
     if (!isValidEgyptPhone(phone)) { alert('⚠️ رقم الهاتف يجب أن يكون 11 رقم ويبدأ بـ 01.'); return; }
     if (parentPhone && !isValidEgyptPhone(parentPhone)) { alert('⚠️ رقم ولي الأمر يجب أن يكون 11 رقم ويبدأ بـ 01.'); return; }
-    if (name.length < 2 || name.length > 100) { alert('⚠️ الاسم يجب أن يكون بين حرفين و100 حرف.'); return; }
+    if (!governorate) { alert('⚠️ اختر المحافظة.'); return; }
+    if (!stage) { alert('⚠️ اختر المرحلة.'); return; }
+
+    // ✅ المركز إجباري لو مش صفارة
+    if (!isOutside && !center) {
+        alert('⚠️ اكتب اسم المركز، أو فعّل خيار "أدرس خارج مصر (صفارة)".');
+        const centerInput = document.getElementById('regCenter');
+        if (centerInput) centerInput.focus();
+        return;
+    }
+    if (center && center.length > 100) {
+        alert('⚠️ اسم المركز يجب أن يكون أقل من 100 حرف.');
+        return;
+    }
 
     btn.disabled = true;
     btn.textContent = 'جاري إنشاء الحساب...';
 
+    let accountCreated = false;
+    let dataSaved = false;
+
     try {
         ignoreAuthChange = true;
         const cred = await auth.createUserWithEmailAndPassword(email, password);
+        accountCreated = true;
 
         await db.collection('users').doc(cred.user.uid).set({
             id: cred.user.uid,
@@ -1761,13 +1769,20 @@ async function handleRegisterSubmit(e) {
             attempts: { avg: 0, solved: 0, total: 0, pending: 0 },
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        await auth.signOut();
-        ignoreAuthChange = false;
-        alert('✅ تم إنشاء الحساب بنجاح! يرجى انتظار التفعيل من الإدارة.');
+        dataSaved = true;
+
+        // ✅ إرسال إيميل تأكيد البريد الإلكتروني
+        try {
+            await cred.user.sendEmailVerification();
+            console.log('✅ تم إرسال رابط التفعيل إلى:', email);
+        } catch (emailErr) {
+            console.warn('⚠️ فشل إرسال إيميل التفعيل:', emailErr);
+        }
+
+        alert('✅ تم إنشاء الحساب بنجاح!\n\n📧 تم إرسال رابط التفعيل إلى بريدك الإلكتروني.\n\n⚠️ لو مش لاقي الإيميل، ابص في مجلد Spam أو Junk.\n\n📌 بعد التفعيل، يرجى انتظار تفعيل حسابك من الإدارة.');
         switchAuthView('login');
         document.getElementById('registerForm').reset();
     } catch (err) {
-        ignoreAuthChange = false;
         console.error('❌ Registration error:', err.code, err.message);
 
         if (err.code === 'auth/email-already-in-use')        alert('البريد الإلكتروني مستخدم بالفعل.');
@@ -1779,7 +1794,20 @@ async function handleRegisterSubmit(e) {
         else if (err.code === 'permission-denied' || (err.message && err.message.toLowerCase().includes('permission')))
             alert('❌ صلاحيات Firestore تمنع الحفظ.');
         else                                                  alert('حدث خطأ: ' + (err.code || err.message || 'غير معروف'));
+
+        if (accountCreated && !dataSaved) {
+            alert('⚠️ تم إنشاء الحساب لكن لم يتم حفظ بياناتك في قاعدة البيانات.\nيرجى التواصل مع الإدارة.');
+        }
     } finally {
+        // ✅ signOut في finally عشان المستخدم مايفضلش مسجل دخول
+        if (accountCreated) {
+            try {
+                await auth.signOut();
+            } catch (signOutErr) {
+                console.warn('⚠️ signOut failed:', signOutErr);
+            }
+        }
+        ignoreAuthChange = false;
         btn.disabled = false;
         btn.textContent = 'إنشاء الحساب ←';
     }
@@ -1795,8 +1823,39 @@ async function handleLoginSubmit(e) {
     const password = document.getElementById('loginPass').value;
     btn.disabled = true;
     btn.textContent = 'جاري تسجيل الدخول...';
+
     try {
-        await auth.signInWithEmailAndPassword(email, password);
+        const cred = await auth.signInWithEmailAndPassword(email, password);
+        const fbUser = cred.user;
+
+        // ✅ التحقق من تفعيل البريد الإلكتروني
+        if (!fbUser.emailVerified) {
+            const resend = confirm(
+                '⚠️ لم يتم تفعيل بريدك الإلكتروني بعد.\n\n' +
+                'افتح بريدك (' + fbUser.email + ') واضغط على رابط التفعيل.\n\n' +
+                '(لو مش لاقي الإيميل، ابص في مجلد Spam)\n\n' +
+                'هل تريد إعادة إرسال رابط التفعيل الآن؟'
+            );
+
+            if (resend) {
+                try {
+                    await fbUser.sendEmailVerification();
+                    alert('✅ تم إرسال رابط التفعيل مرة أخرى.\n\nافحص بريدك الإلكتروني.');
+                } catch (resendErr) {
+                    console.error('❌ فشل إعادة إرسال رابط التفعيل:', resendErr);
+                    if (resendErr.code === 'auth/too-many-requests') {
+                        alert('⚠️ محاولات كثيرة. انتظر دقيقة وحاول تاني.');
+                    } else {
+                        alert('⚠️ فشل إعادة الإرسال. حاول لاحقاً.');
+                    }
+                }
+            }
+
+            await auth.signOut();
+            return;
+        }
+
+        // ✅ الإيميل متفعل — الـ Auth Observer هيكمل باقي الفحوصات
     } catch (err) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
             alert('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.');
