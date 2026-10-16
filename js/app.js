@@ -1393,18 +1393,37 @@ function selectOption(optIndex) { answers[currentQIndex] = optIndex; renderQuest
 function goToQuestion(index) { currentQIndex = index; renderQuestion(); }
 function prevQuestion() { if (currentQIndex > 0) { currentQIndex--; renderQuestion(); } }
 
-function handleNextOrFinish() {
+async function handleNextOrFinish() {
     if (currentQIndex < currentExam.questions.length - 1) {
         currentQIndex++;
         renderQuestion();
     } else {
         const answeredCount = answers.filter(a => a !== null).length;
+        let proceed = false;
+
+        // ✅ showConfirm بدل confirm
         if (answeredCount < currentExam.questions.length) {
             const remaining = currentExam.questions.length - answeredCount;
-            if (!confirm(`⚠️ لم تجب على ${remaining} سؤال.\nهل تريد تسليم الاختبار الآن؟`)) return;
+            proceed = await showConfirm(
+                `⚠️ لم تجب على ${remaining} سؤال.\n\nهل تريد تسليم الاختبار الآن؟`,
+                {
+                    title: 'تنبيه',
+                    icon: '⚠️',
+                    okText: 'تسليم',
+                    cancelText: 'رجوع',
+                    danger: true
+                }
+            );
         } else {
-            if (!confirm('هل أنت متأكد من تسليم الاختبار؟')) return;
+            proceed = await showConfirm('هل أنت متأكد من تسليم الاختبار؟', {
+                title: 'تسليم الاختبار',
+                icon: '📝',
+                okText: 'تسليم',
+                cancelText: 'رجوع'
+            });
         }
+
+        if (!proceed) return;
         finishExam();
     }
 }
@@ -1830,11 +1849,18 @@ async function handleLoginSubmit(e) {
 
         // ✅ التحقق من تفعيل البريد الإلكتروني
         if (!fbUser.emailVerified) {
-            const resend = confirm(
+            // ✅ showConfirm بدل confirm
+            const resend = await showConfirm(
                 '⚠️ لم يتم تفعيل بريدك الإلكتروني بعد.\n\n' +
                 'افتح بريدك (' + fbUser.email + ') واضغط على رابط التفعيل.\n\n' +
                 '(لو مش لاقي الإيميل، ابص في مجلد Spam)\n\n' +
-                'هل تريد إعادة إرسال رابط التفعيل الآن؟'
+                'هل تريد إعادة إرسال رابط التفعيل الآن؟',
+                {
+                    title: 'تفعيل البريد الإلكتروني',
+                    icon: '📧',
+                    okText: 'إعادة الإرسال',
+                    cancelText: 'لاحقاً'
+                }
             );
 
             if (resend) {
