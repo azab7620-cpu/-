@@ -205,6 +205,9 @@
             box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           🖼️ معاينة صورة المدرس - شكل مستطيل (متوافق مع عرض الكارت الجديد)
+           ═══════════════════════════════════════════════════════════ */
         .image-preview-box {
             display: none;
             margin-top: 10px;
@@ -216,12 +219,13 @@
         }
         .image-preview-box.active { display: block; }
         .image-preview-box img {
-            max-width: 120px;
-            max-height: 120px;
-            border-radius: 50%;
+            width: 140px;
+            height: 180px;
+            border-radius: 16px;
             object-fit: cover;
             border: 3px solid #d4af37;
-            padding: 2px;
+            padding: 3px;
+            background: #f8f6f2;
         }
         .image-preview-box p {
             font-size: 11px;
@@ -501,9 +505,24 @@
             #myStreamsZone { flex-direction: column; align-items: flex-start; }
             #myStreamsBtn { width: 100%; justify-content: center; }
         }
+        /* ═══ Toast ═══ */
+        #toastHost { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; width: min(92vw, 420px); pointer-events: none; }
+        .toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; background: #fff; color: #333; border-radius: 14px; padding: 14px 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid #eee; border-right: 5px solid #b8935a; font-size: 13.5px; font-weight: 600; line-height: 1.7; animation: toastIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .toast.out { animation: toastOut 0.3s ease forwards; }
+        .toast.success { border-right-color: #2a7a2a; }
+        .toast.error { border-right-color: #b00020; }
+        .toast.warn { border-right-color: #d4af37; }
+        .toast .toast-msg { flex: 1; white-space: pre-line; }
+        .toast .toast-x { background: none; border: none; cursor: pointer; color: #999; font-size: 16px; line-height: 1; padding: 2px; }
+        body.dark-mode .toast { background: #1e2a4a; color: #e0e0e0; border-color: #2a3a5a; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-16px) scale(0.96); } to { opacity: 1; transform: none; } }
+        @keyframes toastOut { to { opacity: 0; transform: translateY(-12px) scale(0.96); } }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(201,169,97,0.6); outline-offset: 2px; }
     </style>
 </head>
 <body>
+
+    <div id="toastHost" role="status" aria-live="polite"></div>
 
     <div id="loadingOverlay">
         <div class="spinner"></div>
@@ -885,6 +904,36 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════
+        //  Toast: يستبدل alert() بإشعارات منسقة
+        // ═══════════════════════════════════════════════════════════
+        function showToast(message, type) {
+            const host = document.getElementById('toastHost');
+            if (!host) return;
+            const msg = String(message || '');
+            if (!type) {
+                if (/^\s*(✅|🎉)/.test(msg)) type = 'success';
+                else if (/^\s*(❌|⛔)/.test(msg)) type = 'error';
+                else type = 'warn';
+            }
+            const clean = msg.replace(/^\s*(✅|🎉|❌|⛔|⚠️|⏳|🔒)\s*/, '');
+            const el = document.createElement('div');
+            el.className = 'toast ' + type;
+            const text = document.createElement('div');
+            text.className = 'toast-msg';
+            text.textContent = clean;
+            const x = document.createElement('button');
+            x.className = 'toast-x';
+            x.setAttribute('aria-label', 'إغلاق');
+            x.textContent = '✕';
+            const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+            x.onclick = close;
+            el.append(text, x);
+            host.appendChild(el);
+            setTimeout(close, type === 'error' ? 6500 : 4500);
+        }
+        window.alert = function(m) { showToast(m); };
+
+        // ═══════════════════════════════════════════════════════════
         //  🔒 Helpers
         // ═══════════════════════════════════════════════════════════
         function esc(s) {
@@ -894,7 +943,7 @@
         function safeUrl(u) {
             if (!u) return '#';
             const s = String(u).trim();
-            if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s) || s.startsWith('/')) return s;
+            if (/^https?:\/\//i.test(s) || /^data:image\/(png|jpe?g|gif|webp|svg\+xml)/i.test(s) || s.startsWith('/')) return s;
             return '#';
         }
         function getGradeDocId(grade) {
@@ -1430,7 +1479,11 @@
                 submitBtn.textContent = 'جاري المعالجة...';
 
                 try {
-                    let finalImage = 'https://via.placeholder.com/150/3b0a0a/d4af37?text=' + encodeURIComponent(name.charAt(0));
+                    const initialChar = esc(name.charAt(0));
+                    // ✅ صورة SVG بديلة بشكل مستطيل (170×220) متناسق مع كارت المدرس
+                    let finalImage = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 220"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b0a0a"/><stop offset="100%" stop-color="#1a0404"/></linearGradient></defs><rect width="170" height="220" rx="16" fill="url(#g)"/><circle cx="85" cy="90" r="45" fill="rgba(212,175,55,0.12)" stroke="#d4af37" stroke-width="1.5"/><text x="85" y="112" font-size="60" text-anchor="middle" fill="#d4af37" font-family="Arial,sans-serif" font-weight="bold">' + initialChar + '</text><text x="85" y="190" font-size="12" text-anchor="middle" fill="#c9a961" font-family="Arial,sans-serif">نُورُ الأَزْهَرِ</text></svg>'
+                    );
 
                     if (f.files.length > 0) {
                         finalImage = await imageToBase64Compressed(f.files[0], 400, 0.8);
@@ -1469,7 +1522,6 @@
             let html = '<h4 style="color:#3b0a0a; margin:18px 0; border-top:1px dashed #ddd; padding-top:18px;">الأسئلة:</h4>';
 
             for (let i = 0; i < count; i++) {
-                // النوع الافتراضي للأسئلة الجديدة = اختيار من متعدد
                 html += buildQuestionBoxHTML(i, 'mcq');
             }
             document.getElementById('questionsContainer').innerHTML = html;
@@ -1478,7 +1530,6 @@
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
-        // 🆕 بناء HTML لصندوق سؤال واحد
         function buildQuestionBoxHTML(index, type) {
             return `
                 <div class="question-box-generator" data-qtype="${type}">
@@ -1509,7 +1560,6 @@
                 </div>`;
         }
 
-        // 🆕 خيارات السؤال حسب نوعه
         function getOptionsFieldsHTML(type) {
             if (type === 'truefalse') {
                 return `
@@ -1530,7 +1580,6 @@
                 </div>`;
         }
 
-        // 🆕 خيارات "الإجابة الصحيحة"
         function getCorrectOptionsHTML(type) {
             if (type === 'truefalse') {
                 return `
@@ -1544,7 +1593,6 @@
                 <option value="4">الخيار 4</option>`;
         }
 
-        // 🆕 لما الأدمن يغيّر نوع السؤال
         function changeQuestionType(selectEl) {
             const box = selectEl.closest('.question-box-generator');
             if (!box) return;
@@ -1552,25 +1600,20 @@
             const oldType = box.getAttribute('data-qtype') || 'mcq';
             if (newType === oldType) return;
 
-            // نحفظ البيانات الحالية
             const currentQText = box.querySelector('.q-text-input')?.value || '';
             const currentNote = box.querySelector('.q-note-input')?.value || '';
 
-            // نحدّث النوع
             box.setAttribute('data-qtype', newType);
 
-            // نستبدل قسم الخيارات
             const optionsContainer = box.querySelector('.options-container');
             if (optionsContainer) optionsContainer.innerHTML = getOptionsFieldsHTML(newType);
 
-            // نحدّث قائمة الإجابة الصحيحة
             const correctSelect = box.querySelector('.correct-select');
             if (correctSelect) {
                 correctSelect.innerHTML = getCorrectOptionsHTML(newType);
                 correctSelect.value = '1';
             }
 
-            // نرجّع النصوص
             const qTextEl = box.querySelector('.q-text-input');
             const noteEl = box.querySelector('.q-note-input');
             if (qTextEl) qTextEl.value = currentQText;
@@ -1662,11 +1705,19 @@
             catch (err) { console.error(err); }
         }
 
+        // ✅ جدول المدرسين - صورة مستطيلة مصغرة متناسقة مع الشكل الجديد
         async function loadTeachersTable() {
             const teachers = await getTeachers();
             const tbody = document.getElementById('teachersTableBody');
             tbody.innerHTML = teachers.length ? teachers.map((t, idx) => `
-                <tr><td>${idx+1}</td><td>${esc(t.name)}</td><td>${t.image ? `<img src="${esc(safeUrl(t.image))}" width="40" style="border-radius:50%;border:2px solid #d4af37;">` : 'لا توجد'}</td><td><button onclick="deleteTeacher('${esc(t.id)}')" class="btn-card btn-danger">🗑️</button></td></tr>
+                <tr>
+                    <td>${idx+1}</td>
+                    <td>${esc(t.name)}</td>
+                    <td>${t.image
+                        ? `<img src="${esc(safeUrl(t.image))}" style="width:50px;height:65px;border-radius:8px;object-fit:cover;border:2px solid #d4af37;background:#f8f6f2;">`
+                        : '<span style="color:#999;font-size:11px;">لا توجد</span>'}</td>
+                    <td><button onclick="deleteTeacher('${esc(t.id)}')" class="btn-card btn-danger">🗑️</button></td>
+                </tr>
             `).join('') : '<tr><td colspan="4">لا يوجد مدرسين</td></tr>';
         }
         async function deleteTeacher(id) {
