@@ -95,3 +95,82 @@ function showToast(message, type) {
 }
 
 window.alert = function(m) { showToast(m); };
+
+// ═══════════════════════════════════════════════════════════
+//  ❓ showConfirm — بديل native confirm() بشكل جميل
+//
+//  الاستخدام البسيط:
+//    const ok = await showConfirm('هل أنت متأكد؟');
+//    if (!ok) return;
+//
+//  الاستخدام مع خيارات:
+//    const ok = await showConfirm('نص الرسالة', {
+//        title: 'عنوان',
+//        icon: '🗑️',
+//        okText: 'حذف',
+//        cancelText: 'إلغاء',
+//        danger: true   // يخلي زر التأكيد أحمر
+//    });
+// ═══════════════════════════════════════════════════════════
+function showConfirm(message, options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const msgEl = document.getElementById('confirmMessage');
+        const titleEl = document.getElementById('confirmTitle');
+        const iconEl = document.getElementById('confirmIcon');
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+
+        // Fallback لو الـ modal مش موجود في الصفحة
+        if (!modal || !msgEl || !titleEl || !iconEl || !okBtn || !cancelBtn) {
+            console.warn('⚠️ Confirm Modal not found — using native confirm()');
+            resolve(window.confirm(message));
+            return;
+        }
+
+        // تعيين النصوص (textContent للأمان من XSS)
+        titleEl.textContent = options.title || 'تأكيد';
+        iconEl.textContent = options.icon || '⚠️';
+        okBtn.textContent = options.okText || 'تأكيد';
+        cancelBtn.textContent = options.cancelText || 'إلغاء';
+        msgEl.textContent = String(message || '');
+
+        // تغيير شكل زر التأكيد لو danger
+        if (options.danger) {
+            okBtn.style.background = 'linear-gradient(135deg, #c00, #800)';
+            okBtn.style.color = '#fff';
+            okBtn.style.borderColor = 'transparent';
+        } else {
+            okBtn.style.background = '';
+            okBtn.style.color = '';
+            okBtn.style.borderColor = '';
+        }
+
+        // إظهار الـ modal
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+
+        // الحماية من تسريب الـ listeners
+        const cleanup = () => {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onBackdrop);
+            document.removeEventListener('keydown', onEsc);
+        };
+
+        const onOk = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+        const onBackdrop = (e) => { if (e.target === modal) onCancel(); };
+        const onEsc = (e) => { if (e.key === 'Escape') onCancel(); };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onEsc);
+
+        // تركيز زر التأكيد للوصول السريع بـ Enter
+        setTimeout(() => okBtn.focus(), 100);
+    });
+}
