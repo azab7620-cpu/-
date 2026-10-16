@@ -590,7 +590,8 @@ async function loadStudentDashboard(user) {
     document.getElementById('studentGradeDash').textContent = user.grade || '';
 
     // ─── جلب البيانات بالتوازي ───
-    await fetchStudentAttempts(user.id);
+    const stats = await fetchStudentAttempts(user.id);
+    currentUser.attempts = stats;
 
     const [completed, watched] = await Promise.all([
         fetchCompletedExamIds(user.id),
@@ -608,20 +609,16 @@ async function loadStudentDashboard(user) {
 
         const bundlesSnap = await db.collection('bundles').where('grade', '==', user.grade).get();
         bundles = bundlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        // ✅ ملاحظة: مش بنجيب المحاضرات المستقلة ولا الفيديوهات المنفصلة للطالب
-        // الطالب يشوف الحزم فقط، ويدخل جواها لمشاهدة الفيديوهات
     } catch(e) {
         console.error('خطأ في تحميل exams/bundles:', e);
     }
 
     // ═══════════════════════════════════════════════════════
-    //  📚 كورساتي: الحزم فقط (بدون كروت فيديوهات منفصلة)
+    //  📚 كورساتي: الحزم فقط
     // ═══════════════════════════════════════════════════════
     const coursesGrid = document.getElementById('studentCoursesGrid');
     const allCards = [];
 
-    // (1) الحزم فقط (كروت مع شريط تقدم)
     bundles.forEach((b, idx) => {
         const progress = calculateBundleProgress(b, user);
         allCards.push(`
@@ -686,7 +683,6 @@ async function openBundle(bundleId) {
     if (!bundleSnap.exists) return;
     const bundle = { id: bundleSnap.id, ...bundleSnap.data() };
 
-    // ✅ جلب المحاولات والفيديوهات المشاهدة معاً
     const [completed, watched] = await Promise.all([
         fetchCompletedExamIds(currentUser.id),
         fetchWatchedVideos(currentUser.id)
@@ -1535,6 +1531,23 @@ async function finishExam() {
                 resultData = data;
                 if (countdownDone) showResult(data);
                 if (currentAttemptUnsub) { try { currentAttemptUnsub(); } catch(e) {} currentAttemptUnsub = null; }
+
+                // ✅✨ الجديد: نسجل إن الاختبار خلص — للاختبارات "مرة واحدة" بس
+                if (currentExam && currentExam.oneTimeOnly && currentUser) {
+                    db.collection('users').doc(currentUser.id)
+                      .collection('completedExams').doc(currentExam.id)
+                      .set({
+                          attemptId: attemptRef.id,
+                          completedAt: firebase.firestore.FieldValue.serverTimestamp()
+                      })
+                      .then(() => {
+                          if (!currentUser.completedExams) currentUser.completedExams = [];
+                          if (!currentUser.completedExams.includes(currentExam.id)) {
+                              currentUser.completedExams.push(currentExam.id);
+                          }
+                      })
+                      .catch(err => console.warn('⚠️ تعذر تسجيل الاختبار المكتمل:', err));
+                }
             }
         });
     } catch (err) {
@@ -1619,14 +1632,12 @@ function handleActionClick(e) {
                 const bundleId = el.dataset.bundleId;
                 const itemIdx = parseInt(el.dataset.itemIndex, 10);
                 markVideoAsWatched(bundleId, itemIdx).then(() => {
-                    // لو إحنا جوه تفاصيل نفس الحزمة → حدّث الشريط مباشرة
                     if (currentBundle && currentBundle.id === bundleId) {
                         const newProgress = calculateBundleProgress(currentBundle, currentUser);
                         const fill = document.getElementById('detailProgressFill');
                         const text = document.getElementById('detailProgressText');
                         if (fill) fill.style.width = newProgress + '%';
                         if (text) text.textContent = newProgress + '%';
-                        // إعادة رسم الوحدة عشان تتظهر ✓
                         setTimeout(() => openBundle(bundleId), 300);
                     }
                 });
