@@ -187,7 +187,7 @@ async function showStudentDetails(id) {
     if (!snap.exists) { alert('الطالب غير موجود.'); return; }
     const u = { id: snap.id, ...snap.data() };
 
-    // ✅✨ الجديد: حساب الإحصائيات لحظياً من examAttempts
+    // ✅ حساب الإحصائيات لحظياً من examAttempts
     let stats = { avg: 0, solved: 0, total: 0, pending: 0 };
     try {
         const attemptsSnap = await db.collection('examAttempts')
@@ -432,7 +432,6 @@ async function changeStudentGrade(studentId) {
                 total: 0,
                 pending: 0
             },
-            completedExams: [],
             gradeChangedAt: firebase.firestore.FieldValue.serverTimestamp(),
             gradeChangedBy: currentAdmin ? currentAdmin.name : 'أدمن',
             previousGrade: oldGrade,
@@ -973,11 +972,6 @@ async function saveFullExam() {
 //  📋 الجداول
 // ═══════════════════════════════════════════════════════════
 
-/* ═══════════════════════════════════════════════════════════
-   📹 جدول المحاضرات — يعرض:
-     (1) المحاضرات المستقلة (courses collection)
-     (2) الفيديوهات اللي جوه الحزم (bundles.items[].type === 'video')
-   ═══════════════════════════════════════════════════════════ */
 async function loadCoursesTable() {
     const tbody = document.getElementById('coursesTableBody');
     if (!tbody) return;
@@ -1055,9 +1049,6 @@ async function deleteCourse(id) {
     catch (err) { console.error(err); }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   🗑️ حذف فيديو من داخل حزمة
-   ═══════════════════════════════════════════════════════════ */
 async function deleteBundleVideo(bundleId, itemIndex, videoTitle) {
     if (!confirm(`⚠️ هل أنت متأكد من حذف الفيديو "${videoTitle}" من الحزمة؟\n\nالحزمة نفسها هتفضل موجودة.`)) return;
 
@@ -1170,7 +1161,7 @@ async function deleteExamAndAttempts(examId, examTitle) {
             if (inBatch > 0) await batch.commit();
         }
 
-        // ✅ حذف الـ _private subcollection الأول (لو موجودة)
+        // ✅ حذف الـ _private subcollection الأول
         try {
             await db.collection('exams').doc(examId).collection('_private').doc('key').delete();
         } catch(e) { console.warn('_private cleanup:', e); }
@@ -1933,7 +1924,6 @@ function handleActionClick(e) {
             break;
         case 'close-student-modal': e.preventDefault(); closeStudentModal(); break;
 
-        /* ─── تغيير الصف ─── */
         case 'reveal-grade-change':
             e.preventDefault();
             revealGradeChange();
