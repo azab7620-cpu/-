@@ -4,29 +4,6 @@
 //  State
 // ═══════════════════════════════════════════════════════════
 let currentAdmin = null;
-let currentBroadcastDocId = null;
-
-let liveLocalStream = null;
-let isLiveActive = false;
-let adminCamEnabled = true;
-let adminMicEnabled = true;
-let peerConnections = {};
-let studentStreams = {};
-let studentsUnsubscribe = null;
-let studentDocUnsubscribes = {};
-let adminFacingMode = 'user';
-let adminCurrentCamName = 'Front 1';
-let adminCamerasCache = [];
-
-const ICE_SERVERS = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-    ]
-};
 
 // ═══════════════════════════════════════════════════════════
 //  Collection Helpers
@@ -64,7 +41,7 @@ function loadDarkModePreference() {
 // ═══════════════════════════════════════════════════════════
 function initGrades() {
     const grades = ['الأول ابتدائي','الثاني ابتدائي','الثالث ابتدائي','الرابع ابتدائي','الخامس ابتدائي','السادس ابتدائي','الأول إعدادي','الثاني إعدادي','الثالث إعدادي','الأول ثانوي','الثاني ثانوي','الثالث ثانوي'];
-    ['bundleGrade', 'bookGrade', 'examGrade', 'courseGrade', 'liveGrade'].forEach(id => {
+    ['bundleGrade', 'bookGrade', 'examGrade', 'courseGrade'].forEach(id => {
         const select = document.getElementById(id);
         if (!select) return;
         grades.forEach(g => {
@@ -101,7 +78,6 @@ auth.onAuthStateChanged(async (fbUser) => {
 });
 
 async function logout() {
-    if (isLiveActive) await stopLiveStream();
     try { await auth.signOut(); } catch(e) {}
     window.location.href = 'index.html';
 }
@@ -140,31 +116,7 @@ async function loadStudentsTable() {
         return;
     }
 
-    let perms = {};
-    if (isLiveActive && currentBroadcastDocId) {
-        try {
-            const permsSnap = await db.collection('liveStreams').doc(currentBroadcastDocId).collection('students').get();
-            permsSnap.forEach(d => { perms[d.id] = d.data(); });
-        } catch(e) { console.warn(e); }
-    }
-
     tbody.innerHTML = displayStudents.map((u, idx) => {
-        const studentPerms = perms[u.id] || {};
-        const camAllowed = studentPerms.cameraAllowed === true;
-        const micAllowed = studentPerms.micAllowed === true;
-
-        let liveBtns = '';
-        if (isLiveActive) {
-            liveBtns = `
-                <button type="button" data-action="toggle-student-cam" data-student-id="${attr(u.id)}" data-allowed="${!camAllowed}" class="btn-card ${camAllowed ? 'btn-success' : 'btn-cam-off'}" style="margin-right:5px; font-size:11px; padding:6px 12px;" title="صلاحية الكاميرا">
-                    ${camAllowed ? '📷 ✓' : '📷 ✗'}
-                </button>
-                <button type="button" data-action="toggle-student-mic" data-student-id="${attr(u.id)}" data-allowed="${!micAllowed}" class="btn-card ${micAllowed ? 'btn-success' : 'btn-mic-off'}" style="margin-right:5px; font-size:11px; padding:6px 12px;" title="صلاحية المايك">
-                    ${micAllowed ? '🎤 ✓' : '🎤 ✗'}
-                </button>
-            `;
-        }
-
         return `
         <tr>
             <td>${idx+1}</td>
@@ -172,7 +124,6 @@ async function loadStudentsTable() {
             <td>${esc(u.grade || 'غير محدد')}</td>
             <td style="color:${u.active ? 'green' : 'red'}">${u.active ? '✅ مفعل' : '⏳ معلق'}</td>
             <td style="white-space: nowrap;">
-                ${liveBtns}
                 <button type="button" data-action="show-student-details" data-student-id="${attr(u.id)}" class="btn-card btn-details" style="font-size:11px; padding:6px 12px;">📋</button>
                 <button type="button" data-action="toggle-student" data-student-id="${attr(u.id)}" class="btn-card ${u.active ? 'btn-danger' : 'btn-success'}" style="margin-right:5px; font-size:11px; padding:6px 12px;">${u.active ? 'إلغاء' : 'تفعيل'}</button>
                 <button type="button" data-action="delete-student" data-student-id="${attr(u.id)}" class="btn-card btn-delete" style="margin-right:5px; font-size:11px; padding:6px 12px;">🗑️</button>
@@ -503,7 +454,7 @@ async function toggleStudent(id) {
 }
 
 async function deleteStudent(id) {
-    const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟', {
+    const ok = await showConfirm('⚠️ هل أنت متأكد من حذف هذا الطالب نهائياً؟\n\nسيتم حذف كل درجاته وبياناته من المنصة.', {
         title: 'حذف طالب',
         icon: '🗑️',
         okText: 'حذف',
@@ -513,10 +464,39 @@ async function deleteStudent(id) {
     if (!ok) return;
 
     try {
-        await db.collection('users').doc(id).delete();
-        alert('✅ تم حذف الطالب.');
+        const userRef = db.collection('users').doc(id);
+
+        // 1. حذف محاولات الاختبارات (examAttempts)
+        const attemptsSnap = await db.collection('examAttempts').where('studentId', '==', id).get();
+        if (!attemptsSnap.empty) {
+            let batch = db.batch();
+            let count = 0;
+            attemptsSnap.forEach(doc => {
+                batch.delete(doc.ref);
+                count++;
+                if (count === 400) { batch.commit(); batch = db.batch(); count = 0; }
+            });
+            if (count > 0) await batch.commit();
+        }
+
+        // 2. حذف الـ Subcollections (completedExams, watchedVideos)
+        const completedSnap = await userRef.collection('completedExams').get();
+        const watchedSnap = await userRef.collection('watchedVideos').get();
+
+        let batch2 = db.batch();
+        completedSnap.forEach(doc => batch2.delete(doc.ref));
+        watchedSnap.forEach(doc => batch2.delete(doc.ref));
+        await batch2.commit();
+
+        // 3. حذف المستخدم نفسه
+        await userRef.delete();
+
+        alert('✅ تم حذف الطالب وكل بياناته المرتبطة بنجاح.');
         loadStudentsTable();
-    } catch (err) { console.error(err); alert('❌ حدث خطأ.'); }
+    } catch (err) { 
+        console.error(err); 
+        alert('❌ حدث خطأ أثناء الحذف.'); 
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -829,8 +809,6 @@ function setupForms() {
             submitBtn.textContent = 'إضافة المدرس';
         }
     });
-
-    document.getElementById('liveStreamForm').addEventListener('submit', startLiveStream);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -965,40 +943,27 @@ async function saveFullExam() {
         const qNote = qNoteEl ? qNoteEl.value.trim() : '';
         const qType = box.getAttribute('data-qtype') || 'mcq';
 
-        // ═══════════════════════════════════════════════════════
-        //  ✅ التحقق من نص السؤال
-        // ═══════════════════════════════════════════════════════
         if (!q) { alert('⚠️ السؤال رقم ' + (i + 1) + ' فاضي.'); return; }
         if (q.length < 3) { alert('⚠️ نص السؤال رقم ' + (i + 1) + ' قصير جداً.'); return; }
         if (q.length > 500) { alert('⚠️ نص السؤال رقم ' + (i + 1) + ' طويل جداً (الحد الأقصى 500 حرف).'); return; }
         if (seenQuestions.has(q)) { alert('⚠️ السؤال رقم ' + (i + 1) + ' مكرر مع سؤال سابق.'); return; }
         seenQuestions.add(q);
 
-        // ═══════════════════════════════════════════════════════
-        //  ✅ التحقق من الخيارات
-        // ═══════════════════════════════════════════════════════
         if (opts.length < 2) { alert('⚠️ السؤال رقم ' + (i + 1) + ' محتاج على الأقل خيارين.'); return; }
         if (opts.some(o => !o)) { alert('⚠️ فيه خيار فاضي في السؤال رقم ' + (i + 1) + '.'); return; }
         if (opts.some(o => o.length > 200)) { alert('⚠️ أحد الخيارات في السؤال رقم ' + (i + 1) + ' طويل جداً.'); return; }
 
-        // ✅ منع تكرار الخيارات
         const uniqueOpts = new Set(opts);
         if (uniqueOpts.size !== opts.length) {
             alert('⚠️ فيه خيارات مكررة في السؤال رقم ' + (i + 1) + '.');
             return;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  ✅ التحقق من الإجابة الصحيحة
-        // ═══════════════════════════════════════════════════════
         if (isNaN(correct) || correct < 0 || correct >= opts.length) {
             alert('⚠️ الإجابة الصحيحة في السؤال رقم ' + (i + 1) + ' غير صحيحة.');
             return;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  ✅ التحقق من الملاحظة
-        // ═══════════════════════════════════════════════════════
         const questionObj = { q, options: opts, type: qType };
         if (qNote) {
             if (qNote.length > 300) {
@@ -1309,717 +1274,6 @@ function showTab(tabId, btnEl) {
     if (tabId === 'teachers') loadTeachersTable();
     if (tabId === 'exams') loadExamsTable();
     if (tabId === 'addBundle') populateBundleSelects();
-    if (tabId === 'liveStream') {
-        loadLiveStreamStatus();
-        refreshMyStreamsCount();
-    }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  🔴 البث المباشر
-// ═══════════════════════════════════════════════════════════
-async function getLiveStream() {
-    const source = document.getElementById('liveSource').value;
-
-    if (source === 'screen') {
-        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
-            throw new Error('screen_not_supported');
-        }
-        return await navigator.mediaDevices.getDisplayMedia({
-            video: { frameRate: 15 },
-            audio: true
-        });
-    }
-
-    return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: adminFacingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true
-    });
-}
-
-async function getAdminCamerasList() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cams = devices.filter(d => d.kind === 'videoinput');
-        if (cams.length === 0) return [];
-
-        let frontCount = 0, backCount = 0, otherCount = 0;
-        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        const result = cams.map((cam, idx) => {
-            const rawLabel = (cam.label || '').toLowerCase();
-            let facing = 'unknown';
-            let name = '';
-
-            if (rawLabel.includes('front') || rawLabel.includes('user') || rawLabel.includes('facetime') || rawLabel.includes('face')) {
-                frontCount++; facing = 'front'; name = 'Front ' + frontCount;
-            } else if (rawLabel.includes('back') || rawLabel.includes('rear') || rawLabel.includes('environment') || rawLabel.includes('world')) {
-                backCount++; facing = 'back'; name = 'Back ' + backCount;
-            } else {
-                if (isMobile) {
-                    if (idx === 0 && frontCount === 0) { frontCount++; facing = 'front'; name = 'Front ' + frontCount; }
-                    else { backCount++; facing = 'back'; name = 'Back ' + backCount; }
-                } else {
-                    otherCount++; facing = 'unknown'; name = 'Camera ' + otherCount;
-                }
-            }
-
-            return { deviceId: cam.deviceId, rawLabel: cam.label || '', facing, name };
-        });
-
-        adminCamerasCache = result;
-        return result;
-    } catch(e) {
-        console.error('enumerateDevices error:', e);
-        return [];
-    }
-}
-
-async function loadAdminCamerasList() { await getAdminCamerasList(); }
-
-async function shouldShowSwitchCameraBtn() {
-    const cams = await getAdminCamerasList();
-    if (cams.length >= 2) return true;
-    if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
-    return false;
-}
-
-async function detectCurrentAdminCamName(track) {
-    if (!track) return 'Front 1';
-    const settings = track.getSettings();
-    const currentId = settings.deviceId;
-
-    if (!adminCamerasCache || adminCamerasCache.length === 0) await getAdminCamerasList();
-
-    const found = adminCamerasCache.find(c => c.deviceId === currentId);
-    if (found) return found.name;
-
-    const facing = settings.facingMode || adminFacingMode;
-    if (facing === 'environment') return 'Back 1';
-    if (facing === 'user') return 'Front 1';
-    return 'Camera 1';
-}
-
-async function switchAdminCamera() {
-    if (!liveLocalStream) return;
-
-    const oldVideoTrack = liveLocalStream.getVideoTracks()[0];
-    if (!oldVideoTrack) return;
-
-    const cams = await getAdminCamerasList();
-    if (cams.length < 2) { alert('⚠️ لا توجد كاميرا أخرى للتبديل.'); return; }
-
-    const currentId = oldVideoTrack.getSettings().deviceId;
-    let currentIdx = cams.findIndex(c => c.deviceId === currentId);
-    if (currentIdx === -1) currentIdx = 0;
-
-    const nextIdx = (currentIdx + 1) % cams.length;
-    const nextCam = cams[nextIdx];
-
-    const switchBtn = document.getElementById('btnSwitchCam');
-    if (switchBtn) switchBtn.innerHTML = '<span>⏳</span> <span>جاري التبديل...</span>';
-
-    let newVideoTrack = null;
-
-    try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: nextCam.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: false
-        });
-        newVideoTrack = newStream.getVideoTracks()[0];
-    } catch(e) {
-        console.warn('deviceId failed, trying facingMode:', e);
-        try {
-            const newFacing = adminFacingMode === 'user' ? 'environment' : 'user';
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: newFacing }, width: 1280, height: 720 },
-                audio: false
-            });
-            newVideoTrack = newStream.getVideoTracks()[0];
-            adminFacingMode = newFacing;
-        } catch(e2) {
-            console.error('All switch attempts failed:', e2);
-            alert('⚠️ تعذّر تبديل الكاميرا.');
-            if (switchBtn) switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
-            return;
-        }
-    }
-
-    if (!newVideoTrack) return;
-    newVideoTrack.enabled = adminCamEnabled;
-
-    for (const studentId of Object.keys(peerConnections)) {
-        const pc = peerConnections[studentId];
-        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) { try { await sender.replaceTrack(newVideoTrack); } catch(e) { console.warn(e); } }
-    }
-
-    liveLocalStream.removeTrack(oldVideoTrack);
-    oldVideoTrack.stop();
-    liveLocalStream.addTrack(newVideoTrack);
-
-    const preview = document.getElementById('localPreview');
-    if (preview) preview.srcObject = liveLocalStream;
-
-    adminCurrentCamName = await detectCurrentAdminCamName(newVideoTrack);
-
-    if (switchBtn) {
-        switchBtn.innerHTML = '<span>🔄</span> <span>✅ ' + adminCurrentCamName + '</span>';
-        setTimeout(() => {
-            switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
-        }, 1200);
-    }
-}
-
-async function startLiveStream(e) {
-    e.preventDefault();
-    const title = document.getElementById('liveTitle').value.trim();
-    const grade = document.getElementById('liveGrade').value;
-    const msg = document.getElementById('liveStreamMsg');
-    const startBtn = document.getElementById('startLiveBtn');
-
-    if (!title || !grade) {
-        msg.innerHTML = '<div class="alert alert-warning">⚠️ املأ العنوان والصف.</div>';
-        return;
-    }
-
-    startBtn.disabled = true;
-    startBtn.textContent = 'جاري التحضير...';
-    msg.innerHTML = '';
-
-    const gradeDocId = getBroadcastDocId(currentAdmin.id, grade);
-
-    try {
-        const myActiveStreams = await db.collection('liveStreams')
-            .where('adminId', '==', currentAdmin.id)
-            .where('isLive', '==', true)
-            .get();
-
-        if (myActiveStreams.size >= 10) {
-            msg.innerHTML = '<div class="alert alert-warning">⚠️ لديك 10 بثوث نشطة بالفعل. أوقف واحد منهم أولاً.</div>';
-            startBtn.disabled = false;
-            startBtn.textContent = '🔴 بدء البث';
-            return;
-        }
-    } catch(e) { console.warn('Rate limit check:', e); }
-
-    try {
-        liveLocalStream = await getLiveStream();
-
-        if (document.getElementById('liveSource').value === 'camera') {
-            try {
-                const settings = liveLocalStream.getVideoTracks()[0]?.getSettings();
-                if (settings && settings.facingMode) adminFacingMode = settings.facingMode;
-            } catch(e) {}
-        }
-
-        adminCamEnabled = liveLocalStream.getVideoTracks().length > 0;
-        adminMicEnabled = liveLocalStream.getAudioTracks().length > 0;
-
-        document.getElementById('localPreview').srcObject = liveLocalStream;
-        document.getElementById('localPreviewContainer').style.display = 'block';
-
-        currentBroadcastDocId = gradeDocId;
-
-        try {
-            const oldSnap = await db.collection('liveStreams').doc(gradeDocId).collection('students').get();
-            const batch = db.batch();
-            oldSnap.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-        } catch(e) { console.warn('Cleanup error:', e); }
-
-        await db.collection('liveStreams').doc(gradeDocId).set({
-            isLive: true,
-            title, grade,
-            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            adminId: currentAdmin.id,
-            adminName: currentAdmin.name,
-            settings: { allowAllCameras: false, allowAllMics: false }
-        });
-
-        isLiveActive = true;
-        msg.innerHTML = '<div class="alert alert-success">✅ البث بدأ! في انتظار الطلاب...</div>';
-        startBtn.style.display = 'none';
-        document.getElementById('stopLiveBtn').style.display = 'inline-block';
-        document.getElementById('liveToolbar').style.display = 'flex';
-        document.getElementById('permissionPanel').style.display = 'block';
-        document.getElementById('studentStreamsContainer').style.display = 'block';
-
-        updateAdminCamBtn();
-        updateAdminMicBtn();
-
-        const sourceNow = document.getElementById('liveSource').value;
-        if (sourceNow === 'camera') {
-            const showSwitch = await shouldShowSwitchCameraBtn();
-            const switchBtn = document.getElementById('btnSwitchCam');
-            if (switchBtn) {
-                const videoTrack = liveLocalStream.getVideoTracks()[0];
-                adminCurrentCamName = await detectCurrentAdminCamName(videoTrack);
-                switchBtn.style.display = showSwitch ? 'inline-flex' : 'none';
-                switchBtn.innerHTML = '<span>🔄</span> <span>' + adminCurrentCamName + '</span>';
-            }
-        } else {
-            const switchBtn = document.getElementById('btnSwitchCam');
-            if (switchBtn) switchBtn.style.display = 'none';
-        }
-
-        document.getElementById('liveStreamStatusBox').innerHTML = `
-            <div style="background:#d4edda; color:#155724; border:2px solid #2a7a2a; padding:15px; border-radius:16px; display:flex; align-items:center; gap:10px;">
-                <span class="live-badge"><span class="live-dot"></span> LIVE</span>
-                <span><strong>${esc(title)}</strong> — ${esc(grade)}</span>
-            </div>
-        `;
-
-        studentsUnsubscribe = db.collection('liveStreams').doc(gradeDocId).collection('students')
-            .onSnapshot(snap => {
-                snap.docChanges().forEach(change => {
-                    if (change.type === 'added') createPeerForStudent(change.doc.id, change.doc.data());
-                });
-            });
-
-        liveLocalStream.getVideoTracks()[0]?.addEventListener('ended', () => stopLiveStream());
-
-        refreshMyStreamsCount();
-    } catch (err) {
-        console.error(err);
-        let errorMsg = '❌ تعذّر الوصول للكاميرا/الشاشة.';
-        if (err.message === 'screen_not_supported') errorMsg = '⚠️ مشاركة الشاشة غير مدعومة على هذا الجهاز/المتصفح. اختر "📷 كاميرا" بدلاً منها.';
-        else if (err.name === 'NotAllowedError') errorMsg = '⚠️ تم رفض الصلاحية. يرجى السماح بالوصول للكاميرا/الميكروفون.';
-        else if (err.name === 'NotFoundError') errorMsg = '⚠️ لم يتم العثور على كاميرا أو ميكروفون.';
-        else if (err.name === 'NotReadableError') errorMsg = '⚠️ الكاميرا مستخدمة من تطبيق آخر. أغلق التطبيقات الأخرى وحاول مرة أخرى.';
-
-        msg.innerHTML = '<div class="alert alert-warning">' + errorMsg + '</div>';
-        startBtn.disabled = false;
-        startBtn.textContent = '🔴 بدء البث';
-    }
-}
-
-async function createPeerForStudent(studentId, studentData) {
-    if (peerConnections[studentId]) return;
-
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    peerConnections[studentId] = pc;
-
-    liveLocalStream.getTracks().forEach(track => pc.addTrack(track, liveLocalStream));
-
-    pc.ontrack = (event) => addStudentStream(studentId, event.streams[0]);
-
-    pc.onicecandidate = async (event) => {
-        if (event.candidate) {
-            try {
-                await db.collection('liveStreams').doc(currentBroadcastDocId)
-                    .collection('students').doc(studentId)
-                    .set({ adminCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON()) }, { merge: true });
-            } catch(e) { console.warn('ICE send error:', e); }
-        }
-    };
-
-    pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'failed') {
-            setTimeout(() => { if (pc.connectionState === 'failed') cleanupPeer(studentId); }, 5000);
-        }
-    };
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    await db.collection('liveStreams').doc(currentBroadcastDocId)
-        .collection('students').doc(studentId)
-        .set({
-            offer: { type: offer.type, sdp: offer.sdp },
-            adminId: currentAdmin.id,
-            adminCandidates: []
-        }, { merge: true });
-
-    const unsub = db.collection('liveStreams').doc(currentBroadcastDocId)
-        .collection('students').doc(studentId)
-        .onSnapshot(async (snap) => {
-            if (!snap.exists) return;
-            const data = snap.data();
-
-            if (data.answer && !pc.currentRemoteDescription) {
-                try { await pc.setRemoteDescription(new RTCSessionDescription(data.answer)); } catch(e) { console.warn('setRemote error:', e); }
-            }
-
-            if (data.studentCandidates && pc.remoteDescription) {
-                for (const c of data.studentCandidates) {
-                    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(e) {}
-                }
-            }
-        });
-
-    studentDocUnsubscribes[studentId] = unsub;
-    updateViewerCount();
-}
-
-function cleanupPeer(studentId) {
-    if (peerConnections[studentId]) { try { peerConnections[studentId].close(); } catch(e) {} delete peerConnections[studentId]; }
-    if (studentDocUnsubscribes[studentId]) { try { studentDocUnsubscribes[studentId](); } catch(e) {} delete studentDocUnsubscribes[studentId]; }
-    removeStudentStream(studentId);
-    updateViewerCount();
-}
-
-function updateViewerCount() {
-    const el = document.getElementById('viewerCount');
-    if (el) el.textContent = Object.keys(peerConnections).length;
-}
-
-function toggleAdminCamera() {
-    if (!liveLocalStream) return;
-    const videoTrack = liveLocalStream.getVideoTracks()[0];
-    if (!videoTrack) return;
-    adminCamEnabled = !adminCamEnabled;
-    videoTrack.enabled = adminCamEnabled;
-    updateAdminCamBtn();
-}
-
-function toggleAdminMic() {
-    if (!liveLocalStream) return;
-    const audioTrack = liveLocalStream.getAudioTracks()[0];
-    if (!audioTrack) return;
-    adminMicEnabled = !adminMicEnabled;
-    audioTrack.enabled = adminMicEnabled;
-    updateAdminMicBtn();
-}
-
-function updateAdminCamBtn() {
-    const btn = document.getElementById('btnAdminCam');
-    if (!btn) return;
-    if (adminCamEnabled) { btn.className = 'neutral'; btn.innerHTML = '<span>📷</span> <span>إيقاف الكاميرا</span>'; }
-    else { btn.className = 'inactive'; btn.innerHTML = '<span>📷</span> <span>تشغيل الكاميرا</span>'; }
-}
-
-function updateAdminMicBtn() {
-    const btn = document.getElementById('btnAdminMic');
-    if (!btn) return;
-    if (adminMicEnabled) { btn.className = 'neutral'; btn.innerHTML = '<span>🎤</span> <span>إيقاف المايك</span>'; }
-    else { btn.className = 'inactive'; btn.innerHTML = '<span>🎤</span> <span>تشغيل المايك</span>'; }
-}
-
-async function stopLiveStream() {
-    const msg = document.getElementById('liveStreamMsg');
-
-    Object.keys(peerConnections).forEach(id => cleanupPeer(id));
-
-    if (studentsUnsubscribe) { try { studentsUnsubscribe(); } catch(e) {} studentsUnsubscribe = null; }
-
-    if (liveLocalStream) { liveLocalStream.getTracks().forEach(t => t.stop()); liveLocalStream = null; }
-
-    const docId = currentBroadcastDocId || 'current';
-
-    try {
-        const studentsSnap = await db.collection('liveStreams').doc(docId).collection('students').get();
-        const batch = db.batch();
-        studentsSnap.forEach(d => batch.delete(d.ref));
-        await batch.commit();
-    } catch(e) { console.warn(e); }
-
-    try {
-        await db.collection('liveStreams').doc(docId).update({
-            isLive: false,
-            stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    } catch(e) { console.error(e); }
-
-    currentBroadcastDocId = null;
-    isLiveActive = false;
-
-    document.getElementById('localPreviewContainer').style.display = 'none';
-    document.getElementById('liveToolbar').style.display = 'none';
-    document.getElementById('permissionPanel').style.display = 'none';
-    document.getElementById('studentStreamsContainer').style.display = 'none';
-    document.getElementById('startLiveBtn').style.display = 'inline-block';
-    document.getElementById('startLiveBtn').disabled = false;
-    document.getElementById('startLiveBtn').textContent = '🔴 بدء البث';
-    document.getElementById('stopLiveBtn').style.display = 'none';
-    document.getElementById('liveStreamStatusBox').innerHTML = '<div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط</div>';
-    if (msg) msg.innerHTML = '<div class="alert alert-warning">⏹️ تم إيقاف البث.</div>';
-
-    const switchBtn = document.getElementById('btnSwitchCam');
-    if (switchBtn) { switchBtn.style.display = 'none'; switchBtn.innerHTML = '<span>🔄</span> <span>Front 1</span>'; }
-
-    adminFacingMode = 'user';
-    adminCurrentCamName = 'Front 1';
-    adminCamerasCache = [];
-
-    loadStudentsTable();
-    loadLiveStreamStatus();
-    refreshMyStreamsCount();
-}
-
-function addStudentStream(studentId, stream) {
-    const grid = document.getElementById('studentStreamsGrid');
-    let card = document.getElementById('student-stream-' + studentId);
-
-    if (!card) {
-        card = document.createElement('div');
-        card.id = 'student-stream-' + studentId;
-        card.className = 'student-stream-card';
-        card.innerHTML = '<video autoplay playsinline muted></video><div class="student-name">👤 طالب</div>';
-        grid.appendChild(card);
-    }
-
-    const video = card.querySelector('video');
-    video.srcObject = stream;
-    video.play().catch(e => console.warn(e));
-
-    studentStreams[studentId] = { videoEl: video };
-
-    findStudentNameById(studentId).then(name => {
-        if (name) card.querySelector('.student-name').textContent = '👤 ' + name;
-    });
-}
-
-async function findStudentNameById(uid) {
-    try {
-        const snap = await db.collection('users').doc(uid).get();
-        if (snap.exists) return snap.data().name;
-    } catch(e) {}
-    return null;
-}
-
-function removeStudentStream(studentId) {
-    const card = document.getElementById('student-stream-' + studentId);
-    if (card) card.remove();
-    delete studentStreams[studentId];
-}
-
-async function saveGlobalPermissions() {
-    if (!isLiveActive || !currentBroadcastDocId) return;
-    const allowAllCameras = document.getElementById('permAllCameras').checked;
-    const allowAllMics = document.getElementById('permAllMics').checked;
-    try {
-        await db.collection('liveStreams').doc(currentBroadcastDocId).update({
-            'settings.allowAllCameras': allowAllCameras,
-            'settings.allowAllMics': allowAllMics
-        });
-    } catch(err) { console.error(err); }
-}
-
-async function toggleStudentCamera(studentId, allowed) {
-    if (!isLiveActive || !currentBroadcastDocId) return;
-    try {
-        await db.collection('liveStreams').doc(currentBroadcastDocId).collection('students').doc(studentId).set({ cameraAllowed: allowed }, { merge: true });
-        loadStudentsTable();
-    } catch(err) { console.error(err); }
-}
-
-async function toggleStudentMic(studentId, allowed) {
-    if (!isLiveActive || !currentBroadcastDocId) return;
-    try {
-        await db.collection('liveStreams').doc(currentBroadcastDocId).collection('students').doc(studentId).set({ micAllowed: allowed }, { merge: true });
-        loadStudentsTable();
-    } catch(err) { console.error(err); }
-}
-
-async function loadLiveStreamStatus() {
-    try {
-        const snap = await db.collection('liveStreams').where('isLive', '==', true).get();
-        const box = document.getElementById('liveStreamStatusBox');
-        if (!box) return;
-
-        const activeStreams = snap.docs;
-
-        if (activeStreams.length === 0) {
-            box.innerHTML = '<div style="text-align:center; padding:15px; color:#888;">⏸️ لا يوجد بث نشط حالياً</div>';
-            return;
-        }
-
-        box.innerHTML = activeStreams.map(d => {
-            const data = d.data();
-            const isMine = data.adminId === (currentAdmin ? currentAdmin.id : '');
-            return `
-                <div style="background:${isMine ? '#d4edda' : '#fff3cd'}; color:${isMine ? '#155724' : '#856404'}; border:2px solid ${isMine ? '#2a7a2a' : '#d4af37'}; padding:15px; border-radius:16px; margin-bottom:10px;">
-                    <strong>🔴 بث نشط:</strong> ${esc(data.title || 'بدون عنوان')} — ${esc(data.grade || '')}
-                    <br><small>👤 ${esc(data.adminName || 'أدمن')} ${isMine ? '(أنت)' : ''}</small>
-                </div>
-            `;
-        }).join('');
-    } catch(e) { console.error(e); }
-}
-
-async function refreshMyStreamsCount() {
-    if (!currentAdmin) return;
-    try {
-        const snap = await db.collection('liveStreams').where('adminId', '==', currentAdmin.id).where('isLive', '==', true).get();
-        const mine = snap.docs;
-        const badge = document.getElementById('myStreamsCount');
-        if (badge) {
-            badge.textContent = mine.length;
-            badge.style.background = mine.length > 0 ? '#ffd966' : '#fff';
-            badge.style.color = '#144266';
-        }
-    } catch(e) { console.warn('refreshMyStreamsCount:', e); }
-}
-
-async function showMyStreamsModal() {
-    if (!currentAdmin) return;
-    const modal = document.getElementById('myStreamsModal');
-    const content = document.getElementById('myStreamsContent');
-    if (!modal || !content) return;
-
-    modal.style.display = 'flex';
-    content.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">⏳ جاري التحميل...</div>';
-
-    try {
-        const snap = await db.collection('liveStreams').where('adminId', '==', currentAdmin.id).where('isLive', '==', true).get();
-        const mine = snap.docs;
-
-        if (mine.length === 0) {
-            content.innerHTML = `
-                <div style="text-align:center; padding:30px 20px; color:#888;">
-                    <div style="font-size:50px; margin-bottom:12px; opacity:0.5;">📭</div>
-                    <h3 style="color:#666; margin-bottom:8px;">لا يوجد لديك بثوث نشطة</h3>
-                    <p style="font-size:12px;">لما تبدأ بث جديد هيظهر هنا تلقائياً.</p>
-                </div>
-            `;
-            return;
-        }
-
-        content.innerHTML = mine.map(doc => {
-            const data = doc.data();
-            const isCurrentSession = (doc.id === currentBroadcastDocId);
-            const startedAt = data.startedAt && data.startedAt.toDate ? data.startedAt.toDate() : null;
-            const startedText = startedAt ? startedAt.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—';
-
-            return `
-                <div style="background:${isCurrentSession ? '#e6f7e6' : '#f8f9fa'}; border:2px solid ${isCurrentSession ? '#2a7a2a' : '#dee2e6'}; padding:16px; border-radius:16px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:start; gap:12px; flex-wrap:wrap;">
-                        <div style="flex:1; min-width:200px;">
-                            <div style="font-weight:900; color:#3b0a0a; font-size:15px; margin-bottom:6px;">📝 ${esc(data.title || 'بدون عنوان')}</div>
-                            <div style="font-size:12px; color:#555; margin-bottom:4px;">🎓 ${esc(data.grade || '—')}</div>
-                            <div style="font-size:11px; color:#888;">
-                                ⏰ بدأ: ${startedText}
-                                ${isCurrentSession ? ' • <strong style="color:#2a7a2a;">🔴 الجلسة الحالية</strong>' : ' • <em style="color:#a00;">من جلسة أخرى</em>'}
-                            </div>
-                        </div>
-                        <button type="button" data-action="stop-my-stream" data-doc-id="${attr(doc.id)}" data-current-session="${isCurrentSession}" style="background:linear-gradient(135deg, #c00 0%, #800 100%); color:#fff; border:none; padding:10px 20px; border-radius:50px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 4px 12px rgba(170,0,0,0.3); white-space:nowrap; font-family:'Cairo', sans-serif;">
-                            ⏹️ إيقاف البث
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        console.error(e);
-        content.innerHTML = '<div style="text-align:center; padding:30px; color:#a00;">❌ حدث خطأ أثناء التحميل: ' + esc(e.message) + '</div>';
-    }
-}
-
-function closeMyStreamsModal() {
-    const modal = document.getElementById('myStreamsModal');
-    if (modal) modal.style.display = 'none';
-}
-
-async function stopMyStreamFromList(docId, isCurrentSession) {
-    if (!currentAdmin) return;
-
-    const confirmMsg = isCurrentSession
-        ? `⚠️ هل أنت متأكد من إيقاف بثك الحالي؟\n\nسيتم فصل كل الطلاب المتصلين.`
-        : `⚠️ ده بث من جلسة تانية (أو متبقي في السيرفر).\n\nهل تريد إيقافه؟`;
-
-    const ok = await showConfirm(confirmMsg, {
-        title: 'إيقاف البث',
-        icon: '⏹️',
-        okText: 'إيقاف',
-        cancelText: 'إلغاء',
-        danger: true
-    });
-    if (!ok) return;
-
-    try {
-        const docRef = db.collection('liveStreams').doc(docId);
-
-        const stSnap = await docRef.collection('students').get();
-        if (!stSnap.empty) {
-            const batch = db.batch();
-            stSnap.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-        }
-
-        await docRef.update({
-            isLive: false,
-            stoppedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            stoppedBy: currentAdmin.name + ' (من قائمة بثوثي)'
-        });
-
-        if (isCurrentSession) {
-            Object.keys(peerConnections).forEach(id => { try { cleanupPeer(id); } catch(e) {} });
-
-            if (studentsUnsubscribe) { try { studentsUnsubscribe(); } catch(e) {} studentsUnsubscribe = null; }
-
-            if (liveLocalStream) { liveLocalStream.getTracks().forEach(t => t.stop()); liveLocalStream = null; }
-
-            currentBroadcastDocId = null;
-            isLiveActive = false;
-
-            document.getElementById('localPreviewContainer').style.display = 'none';
-            document.getElementById('liveToolbar').style.display = 'none';
-            document.getElementById('permissionPanel').style.display = 'none';
-            document.getElementById('studentStreamsContainer').style.display = 'none';
-
-            const startBtn = document.getElementById('startLiveBtn');
-            if (startBtn) { startBtn.style.display = 'inline-block'; startBtn.disabled = false; startBtn.textContent = '🔴 بدء البث'; }
-            document.getElementById('stopLiveBtn').style.display = 'none';
-
-            const switchBtn = document.getElementById('btnSwitchCam');
-            if (switchBtn) { switchBtn.style.display = 'none'; switchBtn.innerHTML = '<span>🔄</span> <span>Front 1</span>'; }
-
-            adminFacingMode = 'user';
-            adminCurrentCamName = 'Front 1';
-            adminCamerasCache = [];
-        }
-
-        alert('✅ تم إيقاف البث بنجاح.');
-
-        refreshMyStreamsCount();
-        showMyStreamsModal();
-        loadLiveStreamStatus();
-        loadStudentsTable();
-    } catch(e) {
-        console.error(e);
-        alert('❌ حدث خطأ: ' + e.message);
-    }
-}
-
-async function checkMyExistingStream() {
-    if (!currentAdmin) return;
-    try {
-        const snap = await db.collection('liveStreams').where('adminId', '==', currentAdmin.id).where('isLive', '==', true).get();
-        const myStreams = snap.docs;
-
-        if (myStreams.length === 0) return;
-
-        const count = myStreams.length;
-
-        const choice = await showConfirm(
-            `⚠️ لديك ${count} بث نشط من جلسة سابقة:\n\n` +
-            `هل تريد إيقافها كلها الآن؟\n` +
-            `(اضغط "إلغاء" لو عايز تسيبها — بس الكاميرا مش هتشتغل تلقائياً)`,
-            {
-                title: 'بثوث قديمة',
-                icon: '🔴',
-                okText: 'إيقاف الكل',
-                cancelText: 'إلغاء',
-                danger: true
-            }
-        );
-
-        if (choice) {
-            for (const stream of myStreams) {
-                const stSnap = await stream.ref.collection('students').get();
-                if (!stSnap.empty) {
-                    const batch = db.batch();
-                    stSnap.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                }
-                await stream.ref.update({ isLive: false, stoppedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            }
-            alert('✅ تم إيقاف كل البثوث القديمة.');
-            loadLiveStreamStatus();
-            refreshMyStreamsCount();
-        }
-    } catch(e) { console.warn('checkMyExistingStream:', e); }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2044,14 +1298,6 @@ function handleActionClick(e) {
         case 'show-student-details': e.preventDefault(); showStudentDetails(el.dataset.studentId); break;
         case 'toggle-student': e.preventDefault(); toggleStudent(el.dataset.studentId); break;
         case 'delete-student': e.preventDefault(); deleteStudent(el.dataset.studentId); break;
-        case 'toggle-student-cam':
-            e.preventDefault();
-            toggleStudentCamera(el.dataset.studentId, el.dataset.allowed === 'true');
-            break;
-        case 'toggle-student-mic':
-            e.preventDefault();
-            toggleStudentMic(el.dataset.studentId, el.dataset.allowed === 'true');
-            break;
         case 'close-student-modal': e.preventDefault(); closeStudentModal(); break;
 
         case 'reveal-grade-change':
@@ -2082,16 +1328,6 @@ function handleActionClick(e) {
         case 'delete-exam': e.preventDefault(); deleteExamAndAttempts(el.dataset.examId, el.dataset.examTitle); break;
         case 'generate-questions': e.preventDefault(); generateQuestionBoxes(); break;
         case 'save-exam': e.preventDefault(); saveFullExam(); break;
-        case 'toggle-admin-cam': e.preventDefault(); toggleAdminCamera(); break;
-        case 'toggle-admin-mic': e.preventDefault(); toggleAdminMic(); break;
-        case 'switch-admin-cam': e.preventDefault(); switchAdminCamera(); break;
-        case 'stop-live-stream': e.preventDefault(); stopLiveStream(); break;
-        case 'show-my-streams-modal': e.preventDefault(); showMyStreamsModal(); break;
-        case 'close-my-streams-modal': e.preventDefault(); closeMyStreamsModal(); break;
-        case 'stop-my-stream':
-            e.preventDefault();
-            stopMyStreamFromList(el.dataset.docId, el.dataset.currentSession === 'true');
-            break;
     }
 }
 
@@ -2117,12 +1353,6 @@ function attachStaticListeners() {
     const teacherImageFile = document.getElementById('teacherImageFile');
     if (teacherImageFile) teacherImageFile.addEventListener('change', function() { previewTeacherImage(this); });
 
-    const permAllCameras = document.getElementById('permAllCameras');
-    if (permAllCameras) permAllCameras.addEventListener('change', saveGlobalPermissions);
-
-    const permAllMics = document.getElementById('permAllMics');
-    if (permAllMics) permAllMics.addEventListener('change', saveGlobalPermissions);
-
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('q-type-select')) {
             changeQuestionType(e.target);
@@ -2133,12 +1363,6 @@ function attachStaticListeners() {
     if (studentDetailsModal) {
         studentDetailsModal.addEventListener('click', (e) => {
             if (e.target === studentDetailsModal) closeStudentModal();
-        });
-    }
-    const myStreamsModal = document.getElementById('myStreamsModal');
-    if (myStreamsModal) {
-        myStreamsModal.addEventListener('click', (e) => {
-            if (e.target === myStreamsModal) closeMyStreamsModal();
         });
     }
 }
@@ -2158,24 +1382,7 @@ function initAdminPanel() {
     populateBundleSelects();
     setupForms();
     toggleItemFields();
-    loadLiveStreamStatus();
     attachStaticListeners();
-
-    const sourceSelect = document.getElementById('liveSource');
-    if (sourceSelect) {
-        const screenOpt = sourceSelect.querySelector('option[value="screen"]');
-        const supportsDisplay = navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function';
-        if (screenOpt && !supportsDisplay) {
-            screenOpt.disabled = true;
-            screenOpt.textContent = '🖥️ مشاركة الشاشة (غير مدعومة على هذا الجهاز)';
-        }
-    }
-
-    loadAdminCamerasList();
-    setTimeout(() => checkMyExistingStream(), 500);
-
-    refreshMyStreamsCount();
-    setInterval(refreshMyStreamsCount, 5000);
 
     document.addEventListener('click', handleActionClick);
 }
