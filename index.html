@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="نُورُ تَعْلِيمِ الأَزْهَرِ — منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر، ومتابعة دقيقة للتقدم.">
+    <meta name="description" content="نُورُ تَعْلِيمِ الأَزْهَرِ — منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، ومتابعة دقيقة للتقدم.">
     <meta name="theme-color" content="#3b0a0a">
     <meta property="og:title" content="نُورُ تَعْلِيمِ الأَزْهَرِ">
-    <meta property="og:description" content="منصة تعليمية لطلاب الأزهر الشريف: كورسات، اختبارات، بث مباشر.">
+    <meta property="og:description" content="منصة تعليمية لطلاب الأزهر الشريف: كورسات واختبارات.">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233b0a0a'/%3E%3Cpath d='M32 18c-5-3-12-3-17-1v27c5-2 12-2 17 1 5-3 12-3 17-1V17c-5-2-12-2-17 1z' fill='none' stroke='%23c9a961' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M32 18v27' stroke='%23c9a961' stroke-width='3'/%3E%3C/svg%3E">
     <title>نُورُ تَعْلِيمِ الأَزْهَرِ</title>
@@ -42,7 +42,7 @@
                   https://www.google.com
                   https://www.google.com/recaptcha/
                   https://www.recaptcha.net;
-      media-src 'self' blob: mediastream:;
+      media-src 'self' blob:;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
@@ -160,10 +160,6 @@
                 <button type="button" data-tab="courses" data-action="switch-tab" class="active">📚 كورساتي</button>
                 <button type="button" data-tab="exams" data-action="switch-tab">📝 الاختبارات</button>
                 <button type="button" data-tab="grades" data-action="switch-tab">📊 درجاتي</button>
-                <button type="button" data-tab="live" data-action="switch-tab">
-                    🔴 البث المباشر
-                    <span id="liveDotBadge" style="display:none; background:#a00; color:#fff; padding:2px 8px; border-radius:50px; font-size:10px; margin-right:6px; animation:pulse 1.5s infinite;">●</span>
-                </button>
                 <button type="button" data-tab="platform" data-action="switch-tab">💻 المنصة</button>
             </div>
 
@@ -183,18 +179,6 @@
                     <h4>📊 درجاتي ونتائج الاختبارات</h4>
                     <div id="gradesList">
                         <p style="text-align:center; color:#888; padding:30px;">⏳ جاري التحميل...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-live" class="student-tab-content animate-fade delay-2" style="display:none;">
-                <div class="dash-block">
-                    <h4>🔴 البث المباشر</h4>
-                    <div id="liveStreamViewer">
-                        <div style="text-align:center; padding:40px 20px; color:#888;">
-                            <div style="font-size:60px; margin-bottom:15px; opacity:0.5;">📺</div>
-                            <h3 style="color:#666; margin-bottom:10px;">جاري التحقق من حالة البث...</h3>
-                        </div>
                     </div>
                 </div>
             </div>
