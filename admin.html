@@ -35,7 +35,7 @@
                   https://www.google.com
                   https://www.google.com/recaptcha/
                   https://www.recaptcha.net;
-      media-src 'self' blob: mediastream:;
+      media-src 'self' blob:;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
@@ -103,7 +103,6 @@
             <button type="button" data-action="show-tab" data-tab="books">📚 الكتب</button>
             <button type="button" data-action="show-tab" data-tab="teachers">👨‍🏫 المدرسون</button>
             <button type="button" data-action="show-tab" data-tab="exams">📝 الاختبارات</button>
-            <button type="button" data-action="show-tab" data-tab="liveStream">🔴 البث المباشر</button>
             <button type="button" data-action="show-tab" data-tab="addCourse">➕ إضافة محاضرة</button>
             <button type="button" data-action="show-tab" data-tab="addBook">➕ إضافة كتاب</button>
             <button type="button" data-action="show-tab" data-tab="addTeacher">➕ إضافة مدرس</button>
@@ -246,101 +245,6 @@
                     <tbody id="examsTableBody"></tbody>
                 </table>
             </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             🔴 TAB: Live Stream
-             ═══════════════════════════════════════════════════ -->
-        <div id="tabLiveStream" class="tab-content">
-            <h4 class="section-heading">🔴 البث المباشر الداخلي</h4>
-
-            <div id="liveStreamStatusBox" class="live-status-box">
-                <div class="live-status-empty">⏸️ لا يوجد بث نشط</div>
-            </div>
-
-            <div id="myStreamsZone">
-                <div>
-                    <strong class="my-streams-title">📋 بثوثي النشطة</strong>
-                    <span class="my-streams-desc">اعرض كل البثوث اللي أنت مسجلها دلوقتي وأوقف أي واحد منهم.</span>
-                </div>
-                <button type="button" id="myStreamsBtn" data-action="show-my-streams-modal">
-                    📋 بثوثي النشطة
-                    <span id="myStreamsCount" class="my-streams-count">0</span>
-                </button>
-            </div>
-
-            <div class="live-control-panel">
-                <h5>🎛️ لوحة التحكم بالبث</h5>
-
-                <div class="live-toolbar" id="liveToolbar">
-                    <button type="button" id="btnAdminCam" data-action="toggle-admin-cam" class="neutral">
-                        <span>📷</span> <span>إيقاف الكاميرا</span>
-                    </button>
-                    <button type="button" id="btnAdminMic" data-action="toggle-admin-mic" class="neutral">
-                        <span>🎤</span> <span>إيقاف المايك</span>
-                    </button>
-                    <button type="button" id="btnSwitchCam" data-action="switch-admin-cam" class="neutral">
-                        <span>🔄</span> <span>Front 1</span>
-                    </button>
-                    <span class="stream-status on" id="viewerCountBadge">
-                        👥 <strong id="viewerCount">0</strong> مشاهد
-                    </span>
-                </div>
-
-                <div id="permissionPanel">
-                    <h6 class="permission-heading">🔐 صلاحيات الطلاب أثناء البث</h6>
-                    <div class="live-permission-box">
-                        <label class="perm-toggle">
-                            <span>📷 السماح لكل الطلاب بفتح الكاميرا</span>
-                            <input type="checkbox" id="permAllCameras">
-                        </label>
-                        <label class="perm-toggle">
-                            <span>🎤 السماح لكل الطلاب بفتح المايكروفون</span>
-                            <input type="checkbox" id="permAllMics">
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div id="localPreviewContainer">
-                <label class="preview-label">📹 معاينة كاميرتك:</label>
-                <video id="localPreview" autoplay muted playsinline></video>
-                <p class="preview-hint">👁️ المربع الأسود الصغير = عرض تقريبي لما يراه الطلاب</p>
-            </div>
-
-            <div id="studentStreamsContainer">
-                <h5 class="section-heading">👥 فيديوهات الطلاب المتصلين:</h5>
-                <div id="studentStreamsGrid" class="student-streams-grid"></div>
-            </div>
-
-            <form id="liveStreamForm">
-                <div class="form-grid">
-                    <div class="full-width">
-                        <label for="liveTitle">📝 عنوان البث</label>
-                        <input type="text" id="liveTitle" placeholder="مثال: مراجعة ليلة الامتحان - الفقه" required maxlength="200">
-                    </div>
-                    <div>
-                        <label for="liveGrade">🎓 الصف المستهدف</label>
-                        <select id="liveGrade" required>
-                            <option value="">اختر الصف</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="liveSource">📷 مصدر الفيديو الأساسي</label>
-                        <select id="liveSource">
-                            <option value="camera">📷 كاميرا + مايك</option>
-                            <option value="screen">🖥️ مشاركة الشاشة + صوت</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="live-form-actions">
-                    <button type="submit" id="startLiveBtn" class="btn-submit">🔴 بدء البث</button>
-                    <button type="button" id="stopLiveBtn" data-action="stop-live-stream" class="btn-submit">⏹️ إيقاف البث</button>
-                </div>
-            </form>
-
-            <div id="liveStreamMsg" class="msg-area"></div>
         </div>
 
         <!-- ═══════════════════════════════════════════════════
@@ -602,19 +506,6 @@
                 <button type="button" class="modal-close" data-action="close-student-modal">✕</button>
             </div>
             <div id="studentDetailsContent"></div>
-        </div>
-    </div>
-
-    <!-- My Streams Modal -->
-    <div id="myStreamsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📋 بثوثي النشطة</h3>
-                <button type="button" class="modal-close" data-action="close-my-streams-modal">✕</button>
-            </div>
-            <div id="myStreamsContent">
-                <div class="modal-loading">⏳ جاري التحميل...</div>
-            </div>
         </div>
     </div>
 
